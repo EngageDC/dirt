@@ -1,0 +1,7 @@
+#!/usr/bin/env php
+<?php
+date_default_timezone_set('America/New_York');
+require dirname(__FILE__) . '/vendor/autoload.php';
+
+$dirt = new Dirt\DirtApplication();
+$dirt->run();
