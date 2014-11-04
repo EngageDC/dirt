@@ -9,6 +9,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
 use Dirt\Project;
 use Dirt\Framework\Framework;
+use Dirt\TemplateHandler;
 
 class CreateCommand extends Command
 {
@@ -56,7 +57,7 @@ class CreateCommand extends Command
         $this->output = $output;
 
         // Define the new project's metadata
-        $this->project = new Project($input->getArgument('name'));
+        $this->project = new Project($input->getArgument('name'), $this->config);
         $this->project->setDescription($input->getOption('description'));
 
         // Check if directory already exists

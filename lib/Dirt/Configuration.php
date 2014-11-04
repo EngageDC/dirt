@@ -30,13 +30,21 @@ class Configuration {
         $teamConfig = require(__DIR__ . '/../../team/config.php');
 
         // Local config overrides team config if necessary
-        $this->config = array_replace_recursive($teamConfig, $localConfig);
+        $this->config = (object)array_replace_recursive($teamConfig, $localConfig);
+
+        // Convert array to object
+        // Yep, this is kind of silly
+        $this->config = json_decode(json_encode($this->config));
 
         return $this;
     }
 
     public function __get($varName)
     {
+        if (!isset($this->config->$varName)) {
+            throw new \Exception('"' . $varName . '" does not exist in the configuration');
+        }
+
         return $this->config->$varName;
     }
 }

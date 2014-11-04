@@ -3,6 +3,7 @@ namespace Dirt\Deployer;
 
 use Symfony\Component\Process\Process;
 use Dirt\Configuration;
+use Dirt\TemplateHandler;
 
 class StagingDeployer extends Deployer
 {

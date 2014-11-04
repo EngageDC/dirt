@@ -23,14 +23,10 @@ class Project {
 
     private $databaseCredentials = array();
 
-    /**
-    * @Inject
-    * @var Dirt\Configuration
-    */
-    private $config;
-
-    public function __construct($projectName, $projectNameFull = null, $databaseCredentials = null)
+    public function __construct($projectName, $config, $projectNameFull = null, $databaseCredentials = null)
     {
+        $this->config = $config;
+
         if (!is_null($projectNameFull)) {
             $this->projectNameSimple = $projectName;
             $this->projectNameFull = $projectNameFull;
@@ -49,7 +45,7 @@ class Project {
         }
     }
 
-    public static function fromDirtfile($filename)
+    public static function fromDirtfile($filename, $config)
     {
         if (!file_exists($filename)) {
             throw new \RuntimeException('Dirtfile does not exist: ' . $filename);
@@ -61,7 +57,7 @@ class Project {
             throw new \RuntimeException('Invalid file format, could not read Dirtfile');
         }
 
-        $project = new Project($projectData->name, $projectData->name_full, (array)$projectData->database);
+        $project = new Project($projectData->name, $config, $projectData->name_full, (array)$projectData->database);
         $project->setDevUrl($projectData->urls->dev);
         $project->setStagingUrl($projectData->urls->staging);
         $project->setProductionUrl($projectData->urls->production);

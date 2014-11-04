@@ -3,6 +3,7 @@ namespace Dirt\Framework;
 
 use Symfony\Component\Process\Process;
 use Dirt\Configuration;
+use Dirt\TemplateHandler;
 
 class Laravel4Framework extends Framework
 {
