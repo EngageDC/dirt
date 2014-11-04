@@ -1,6 +1,7 @@
 # dirt
+Dirt is a slightly opinionated deployment tool for getting projects Done In Record Time -- designed with teams in mind.
 
-A deployment tool for beasts.
+> **Note:** Dirt is a work in progress and is not quite ready for showtime yet.
 
 ![Screenshot of dirt in action](http://i.imgur.com/g54K4ey.png)
 
@@ -21,7 +22,7 @@ Before installing dirt, make sure that your development machines has the followi
 ## Installation
 Clone this repository
 
-    $ git clone git@github.com/engage/dirt.git ~/bin/dirt
+    $ git clone git@github.com:EngageDC/dirt.git ~/bin/dirt
 	$ cd ~/bin/dirt
 
 Install dependencies with Composer
