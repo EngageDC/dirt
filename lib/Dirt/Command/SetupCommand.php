@@ -20,6 +20,9 @@ class SetupCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $output->writeln('<info>dirt setup is currently unavailable</info>');
+        return;
+
         // Introduction text
         $output->writeln('<info>Let\'s get started with dirt!</info>');
         $output->writeln('<info>This will set up your dirt installation and create a .dirt configuration file in your home directory.</info>');
