@@ -220,37 +220,16 @@ class CreateCommand extends Command
             exit(1);
         }
 
-        // Template variables
-        $devDatabaseCredentials = $this->project->getDatabaseCredentials('dev');
+        // Add template files
+        $templateHandler = new TemplateHandler();
+        $templateHandler->setProject($this->project);
 
-        $variables = array(
-            '__PROJECT_NAME__' => $this->project->getName(false),
-            '__PROJECT_NAME_SIMPLE__' => $this->project->getName(true),
-            '__PROJECT_DESCRIPTION__' => $this->project->getDescription(),
-            '__DEV_URL__' => $this->project->getDevUrl(false),
-            '__STAGING_URL__' => $this->project->getStagingUrl(false),
-            '__DATABASE_USERNAME__' => $devDatabaseCredentials['username'],
-            '__DATABASE_PASSWORD__' => $devDatabaseCredentials['password'],
-            '__DATABASE_NAME__' => $devDatabaseCredentials['database'],
-            '__IPADDRESS__' => $this->project->getIpAddress()
-        );
-
-        // Add Readme
-        $readmeTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/README.md');
-        $readmeTemplate = str_replace(array_keys($variables), array_values($variables), $readmeTemplate);
-        file_put_contents($this->project->getDirectory() . '/README.md', $readmeTemplate);
-
-        // Add .gitignore
-        $gitignoreTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/gitignore');
-        file_put_contents($this->project->getDirectory() . '/.gitignore', $gitignoreTemplate);
+        $templateHandler->writeTemplate('README.md');
+        $templateHandler->writeTemplate('gitignore');
+        $templateHandler->writeTemplate('Vagrantfile');
 
         // Add Dirtfile
         $this->project->save();
-
-        // Add Vagrantfile
-        $vagrantTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/Vagrantfile');
-        $vagrantTemplate = str_replace(array_keys($variables), array_values($variables), $vagrantTemplate);
-        file_put_contents($this->project->getDirectory() . '/Vagrantfile', $vagrantTemplate);
         
         // Initialize git for working directory
         $process = new Process(null, $this->project->getDirectory());

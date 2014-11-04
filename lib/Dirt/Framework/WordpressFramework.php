@@ -102,7 +102,7 @@ class WordpressFramework extends Framework
             } elseif (strpos($line, "define('DB_USER'") !== FALSE) {
                 $line = "define('DB_USER', '". $databaseCredentials['username'] ."');";
             } elseif (strpos($line, "define('DB_HOST'") !== FALSE) {
-                $line = "define('DB_HOST', '". $databaseCredentials['hostname']] ."');";
+                $line = "define('DB_HOST', '". $databaseCredentials['hostname'] ."');";
             } elseif (strpos($line, "define('DB_PASSWORD'") !== FALSE) {
                 $line = "define('DB_PASSWORD', '". $databaseCredentials['password'] ."');";
             } elseif (strpos($line, "\$table_prefix  =") !== FALSE) {

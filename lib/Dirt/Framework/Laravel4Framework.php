@@ -79,10 +79,14 @@ class Laravel4Framework extends Framework
         // Add environments to start.php
         $this->updateEnvironmentDetection($project->getDirectory());
 
-        // Update .gitignore
-        $gitignoreTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/gitignore');
+        // Merge Laravel gitignore file with gitignore template
         $originalGitignore = file_get_contents($project->getDirectory() . '/.gitignore');
-        file_put_contents($project->getDirectory() . '/.gitignore', $originalGitignore . PHP_EOL . $gitignoreTemplate);
+
+        $templateHandler = new TemplateHandler();
+        $templateHandler->setProject($project);
+        $templateHandler->writeTemplate('gitignore');
+
+        file_put_contents($project->getDirectory() . '/.gitignore', $originalGitignore . PHP_EOL . file_get_contents($project->getDirectory() . '/.gitignore'));
 
         // Run "composer install"
         $progressCallback("\t" . 'Running "composer install" (this may take a few minutes) ');

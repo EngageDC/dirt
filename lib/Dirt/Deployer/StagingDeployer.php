@@ -324,8 +324,10 @@ class StagingDeployer extends Deployer
             '__PROJECT_NAME__' => strtolower($this->project->getName()),
             '__STAGING_URL__' => $this->project->getStagingUrl(false)
         );
-        $vhostTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/staging_vhost.conf');
-        $vhostTemplate = str_replace(array_keys($variables), array_values($variables), $vhostTemplate);
+
+        $templateHandler = new TemplateHandler();
+        $templateHandler->setProject($this->project);
+        $vhostTemplate = $templateHandler->generateTemplate('staging_vhost.conf');
 
         $response = $this->ssh->exec('sudo sh -c \'echo "'. $vhostTemplate .'" > /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf\'');
         if ($this->ssh->getExitStatus() != 0) {

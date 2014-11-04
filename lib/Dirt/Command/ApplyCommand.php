@@ -11,6 +11,7 @@ use Dirt\Project;
 use Dirt\Framework\Framework;
 use Dirt\Deployer\Deployer;
 use Dirt\Deployer\StagingDeployer;
+use Dirt\TemplateHandler;
 
 class ApplyCommand extends Command
 {
@@ -33,24 +34,6 @@ class ApplyCommand extends Command
         }
         $project = Project::fromDirtfile($dirtfileName);
 
-        // Template variables
-        $devDatabaseCredentials = $project->getDatabaseCredentials('dev');
-
-        $variables = array(
-            '__PROJECT_NAME__' => $project->getName(false),
-            '__PROJECT_NAME_SIMPLE__' => $project->getName(true),
-            '__PROJECT_DESCRIPTION__' => $project->getDescription(),
-            '__DEV_URL__' => $project->getDevUrl(false),
-            '__STAGING_URL__' => $project->getStagingUrl(false),
-            '__DATABASE_USERNAME__' => $devDatabaseCredentials['username'],
-            '__DATABASE_PASSWORD__' => $devDatabaseCredentials['password'],
-            '__DATABASE_NAME__' => $devDatabaseCredentials['database'],
-            '__IPADDRESS__' => $project->getIpAddress(),
-        );
-
-        // Re-save the configuration file in case it has changed
-        $project->save();
-
         // Check if Vagrantfile exists
         if (file_exists($project->getDirectory() . '/Vagrantfile'))
         {
@@ -64,18 +47,23 @@ class ApplyCommand extends Command
             }
         }
 
+        // Re-save the configuration file in case it has changed
+        $project->save();
+
+        // Update Vagrantfile
         $output->write('Updating Vagrantfile... ');
-        $vagrantTemplate = file_get_contents(dirname(__FILE__) . '/../Templates/Vagrantfile');
-        $vagrantTemplate = str_replace(array_keys($variables), array_values($variables), $vagrantTemplate);
-        file_put_contents($project->getDirectory() . '/Vagrantfile', $vagrantTemplate);
+        $templateHandler = new TemplateHandler();
+        $templateHandler->setProject($project);
+        $templateHandler->writeTemplate('Vagrantfile');
         $output->writeln('<info>OK</info>');
 
+        // Display warning if Berksfile exists
+        // TODO: Remove me when this is no longer relevant
         if (file_exists($project->getDirectory() . '/Berksfile')) {
-            $output->write('Deleting Berksfile as it is no longer necessary... ');
-            @unlink($project->getDirectory() . '/Berksfile');
-            $output->writeln('<info>OK</info>');
+            $output->writeln('<comment>Note: The Berksfile is no longer necessary, you can safely delete it.</comment>');
         }
 
+        // Configure framework if ncessary
         if ($project->getFramework() !== FALSE) {
             $output->write('Reconfiguring local environment... ');
             $project->getFramework()->configureEnvironment('dev', $project);
