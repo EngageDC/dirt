@@ -157,17 +157,14 @@ class Laravel4Framework extends Framework
 
             if ($isInMySQLSection)
             {
-                if (strpos($line, "'username'") !== FALSE)
-                {
-                    $line = str_replace('root', $databaseCredentials['username'], $line);
-                }
-                elseif (strpos($line, "'database'") !== FALSE)
-                {
-                    $line = str_replace("'database',", "'" . $databaseCredentials['database'] . "',", $line);
-                }
-                elseif (strpos($line, "'password'") !== FALSE)
-                {
-                    $line = str_replace("''", "'" . $databaseCredentials['password'] . "'", $line);
+                if (preg_match("/'(.*)'\s+=>\s+('.*',)$/i", $line, $match)) {
+                    switch ($match[1]) {
+                        case 'username':
+                        case 'database':
+                        case 'password':
+                            $line = str_replace($match[2], "'" . $databaseCredentials[$match[1]] . "',", $line);
+                            break;
+                    }
                 }
             }
         }
