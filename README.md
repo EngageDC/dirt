@@ -52,5 +52,6 @@ Dirt handles deployment to both the staging and production environment, the depl
 
 
 ## Assumptions
-* MySQL Credentials for staging are shared between all projects
-* MySQL Credentials for production are defined on a per-project basis
+* Default database server is MySQL
+* All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
+* Developers does not have root access on production
