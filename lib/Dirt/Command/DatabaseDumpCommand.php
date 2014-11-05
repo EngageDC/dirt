@@ -17,9 +17,9 @@ class DatabaseDumpCommand extends Command
 {
     private $input;
     private $output;
-    
-    private $config;
+
     private $project;
+    private $config;
 
     public function __construct(\Dirt\Configuration $configuration) {
         parent::__construct();
@@ -53,7 +53,7 @@ class DatabaseDumpCommand extends Command
         if (!file_exists($dirtfileName)) {
             throw new \RuntimeException('Not a valid project directory, Dirtfile.json could not be found.');
         }
-        $project = Project::fromDirtfile($dirtfileName);
+        $project = Project::fromDirtfile($dirtfileName, $this->config);
 
         // Validate environment
         $dialog = $this->getHelperSet()->get('dialog');

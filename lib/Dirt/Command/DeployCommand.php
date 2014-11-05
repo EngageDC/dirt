@@ -15,12 +15,14 @@ use Dirt\Deployer\ProductionDeployer;
 
 class DeployCommand extends Command
 {
+    private $config;
+
     public function __construct(\Dirt\Configuration $configuration) {
-        parent::__construct(null);
+        parent::__construct();
 
         $this->config = $configuration;
     }
-
+    
     protected function configure()
     {
         $this
@@ -61,7 +63,7 @@ class DeployCommand extends Command
         if (!file_exists($dirtfileName)) {
             throw new \RuntimeException('Not a valid project directory, Dirtfile.json could not be found.');
         }
-        $project = Project::fromDirtfile($dirtfileName);
+        $project = Project::fromDirtfile($dirtfileName, $this->config);
 
         // Validate environment
         $deployer = null;
