@@ -6,52 +6,60 @@ Dirt is a slightly opinionated deployment tool for getting projects Done In Reco
 ![Screenshot of dirt in action](http://i.imgur.com/g54K4ey.png)
 
 ## Requirements
-Before installing dirt, make sure that your development machines has the following tools installed:
+Before installing dirt, please make sure that your development machine has the following tools installed:
 
-* [VirtualBox](https://www.virtualbox.org)
-* [Vagrant](http://vagrantup.com)
-* [vagrant-hostmanager](https://github.com/smdahlen/vagrant-hostmanager)
-	* `vagrant plugin install vagrant-hostmanager`
-* [vagrant-triggers](https://github.com/emyl/vagrant-triggers)
-	* `vagrant plugin install vagrant-triggers`
 * [git](http://git-scm.com)
 * [unzip](http://linux.die.net/man/1/unzip)
 * [PHP (cli)](http://php.net)
 * [Composer](http://getcomposer.org/download/)
 
+Per default, Dirt is configured to generate a Vagrantfile for you project. If you want use Vagrant, please make sure that the following tools are installed:
+
+* [VirtualBox](https://www.virtualbox.org)
+* [Vagrant](http://vagrantup.com)
+
 ## Installation
+
+The recommended via to install dirt is via git, this makes it easy to install any updates.
+
 Clone this repository
 
-    $ git clone git@github.com:EngageDC/dirt.git ~/bin/dirt
-	$ cd ~/bin/dirt
+    $ git clone git@github.com:EngageDC/dirt.git /usr/local/bin/dirt
+	$ cd /usr/local/bin/dirt
 
 Install dependencies with Composer
 
     $ composer install
 
-(Optionally) add dirt to your PATH so it can be used everywhere, e.g on OS X, you would do:
+Add dirt to your PATH so it can be used everywhere, e.g on OS X, you would do:
 	
-	$ echo "export PATH=/Users/$USER/bin/dirt:\$PATH" >> ~/.bash_profile
+	$ echo "export PATH=/usr/local/bin/dirt:\$PATH" >> ~/.bash_profile
+
+Now, create a dirt configuration. This is done by running:
 
 ## Usage
-First a dirt configuration file must be created, this is done by running:
 
-	$ dirt setup
-
-A new project can then be created, the only required parameter is the project name. A description and framework can optionally be specified. If the framework parameter is set, dirt will download and add that framework to the repository.
+### Create project
+The only required parameter is the project name. A description and framework can optionally be specified. If the framework parameter is set, dirt will download and add that framework to the repository.
 
 	$ dirt create [-f|--framework="..."] [-d|--description="..."] name
 
+### Deployment
 Dirt handles deployment to both the staging and production environment, the deployment process can be invoked by calling:
 
-	$ dirt deploy [environment]
+	$ dirt deploy staging|production
 
+### Database dumping
+This allows you to create a MySQL database dump of either the development or staging environment.
 
-## Additional screenshots
-![Creating a new project](http://i.imgur.com/GLOkkIs.png)
+When creating a database dump from staging, you can optionally specify the `--i` option to import the database dump to your development server.
 
+	$ dirt database:dump [-i|--import] dev|staging
 
 ## Assumptions
 * Default database server is MySQL
 * All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
 * Developers does not have root access on production
+
+## Additional screenshots
+![Creating a new project](http://i.imgur.com/GLOkkIs.png)
