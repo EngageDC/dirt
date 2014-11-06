@@ -1,0 +1,8 @@
+<?php
+return [
+  'environments' => [
+    'dev' => [
+      'domain_suffix' => '.local'
+    ]
+  ]
+];

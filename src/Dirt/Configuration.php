@@ -4,11 +4,13 @@ namespace Dirt;
 class Configuration {
 
     private $config = null;
-    private $configFilename = null;
+    private $localConfigFilename = null;
+    private $teamConfigFilename = null;
 
-    public function __construct()
+    public function __construct($localConfigFilename = null, $teamConfigFilename = null)
     {
-        $this->configFilename = $_SERVER['HOME'] . '/.dirt';
+        $this->localConfigFilename = $localConfigFilename ? $localConfigFilename : $_SERVER['HOME'] . '/.dirt';
+        $this->teamConfigFilename = $teamConfigFilename ? $teamConfigFilename : __DIR__ . '/../../team/config.php';
         $this->load();
 
         return $this;
@@ -16,21 +18,32 @@ class Configuration {
 
     public function configurationExists()
     {
-        return file_exists($this->configFilename);
+        return file_exists($this->localConfigFilename);
+    }
+
+    public function teamConfigurationExists()
+    {
+        return file_exists($this->teamConfigFilename);
     }
 
     public function load()
     {
         // Check if configuration file exists
         if (!$this->configurationExists()) {
-            throw new \RuntimeException('Dirt configuration file not found, please run "dirt setup" first.');
+            throw new \RuntimeException('Local dirt configuration file not found, please run "dirt setup" first.');
         }
 
-        $localConfig = require($this->configFilename);
-        $teamConfig = require(__DIR__ . '/../../team/config.php');
+        $localConfig = require($this->localConfigFilename);
 
-        // Local config overrides team config if necessary
-        $this->config = (object)array_replace_recursive($teamConfig, $localConfig);
+        // Do we need to use a team configuration?
+        if ($this->teamConfigurationExists()) {
+            $teamConfig = require($this->teamConfigFilename);
+
+            // Local config overrides team config if necessary
+            $this->config = (object)array_replace_recursive($teamConfig, $localConfig);
+        } else {
+            $this->config = $localConfig;
+        }
 
         // Convert array to object
         // Yep, this is kind of silly
