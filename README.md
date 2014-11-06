@@ -8,6 +8,8 @@ Dirt is a slightly opinionated deployment tool for getting projects Done In Reco
 ![Screenshot of dirt in action](http://i.imgur.com/Wd5hhQO.png)
 
 ## Requirements
+Dirt has been tested and is actively being used on OS X 10.10. It has however previously been used with Ubuntu Linux and Windows 7/8 and should still work on these platforms. Please open an issue if you experience any problems.
+
 Before installing dirt, please make sure that your development machine has the following tools installed:
 
 * [git](http://git-scm.com)
