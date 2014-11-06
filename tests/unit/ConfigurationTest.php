@@ -1,5 +1,4 @@
 <?php
-use Dirt\Project;
 use Dirt\Configuration;
 
 class ConfigurationTest extends \PHPUnit_Framework_TestCase
