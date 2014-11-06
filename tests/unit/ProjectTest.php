@@ -24,7 +24,7 @@ class ProjectTest extends \PHPUnit_Framework_TestCase
 
         // Ensure that the git config was parsed correctly
         $this->assertTrue(
-            $project->getRepositoryUrl() == 'git://github.com:EngageDC/dirt.git' ||
+            $project->getRepositoryUrl() == 'git://github.com/EngageDC/dirt.git' ||
             $project->getRepositoryUrl() == 'git@github.com:EngageDC/dirt.git'
         );
     }

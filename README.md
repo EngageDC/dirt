@@ -12,7 +12,7 @@ Before installing dirt, please make sure that your development machine has the f
 
 * [git](http://git-scm.com)
 * [unzip](http://linux.die.net/man/1/unzip)
-* [PHP (cli)](http://php.net)
+* [PHP 5.4+](http://php.net)
 * [Composer](http://getcomposer.org/download/)
 
 Per default, Dirt is configured to generate a Vagrantfile for you project. If you want use Vagrant, please make sure that the following tools are installed:
