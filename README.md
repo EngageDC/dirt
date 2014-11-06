@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/EngageDC/dirt.svg)](https://travis-ci.org/EngageDC/dirt)
+
 # dirt
 Dirt is a slightly opinionated deployment tool for getting projects Done In Record Time -- designed with teams in mind.
 
