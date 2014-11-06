@@ -9,7 +9,7 @@ use Symfony\Component\Console\Input\InputArgument;
 class DirtApplication extends Application {
 
     public function __construct() {
-        parent::__construct('dirt [Done In Record Time]', '0.5.2');
+        parent::__construct('dirt [Done In Record Time]', '1.0.0');
 
         $builder = new \DI\ContainerBuilder();
         $container = $builder->build();
