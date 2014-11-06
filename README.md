@@ -56,6 +56,9 @@ When creating a database dump from staging, you can optionally specify the `--i`
 
 	$ dirt database:dump [-i|--import] dev|staging
 
+## Creating a team configuration
+When using dirt with a team, you might want to share common configuration with all team members.
+
 ## Assumptions
 * Default database server is MySQL
 * All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
