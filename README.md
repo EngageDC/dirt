@@ -3,7 +3,7 @@ Dirt is a slightly opinionated deployment tool for getting projects Done In Reco
 
 > **Note:** Dirt is a work in progress and is not quite ready for showtime yet.
 
-![Screenshot of dirt in action](http://i.imgur.com/g54K4ey.png)
+![Screenshot of dirt in action](http://i.imgur.com/Wd5hhQO.png)
 
 ## Requirements
 Before installing dirt, please make sure that your development machine has the following tools installed:
