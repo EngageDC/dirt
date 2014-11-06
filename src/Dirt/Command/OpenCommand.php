@@ -41,7 +41,8 @@ class OpenCommand extends Command
         if (!file_exists($dirtfileName)) {
             throw new \RuntimeException('Not a valid project directory, Dirtfile.json could not be found.');
         }
-        $project = Project::fromDirtfile($dirtfileName, $this->config);
+        $project = Project::fromDirtfile($dirtfileName);
+        $project->setConfig($this->config);
 
         // Validate environment
         $deployer = null;

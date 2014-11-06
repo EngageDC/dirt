@@ -21,31 +21,18 @@ class Project {
     private $stagingUrl;
     private $productionUrl;
 
-    private $databaseCredentials = array();
+    private $databaseCredentials = [];
 
-    public function __construct($projectName, $config, $projectNameFull = null, $databaseCredentials = null)
-    {
-        $this->config = $config;
+    private $config = null;
 
-        if (!is_null($projectNameFull)) {
-            $this->projectNameSimple = $projectName;
-            $this->projectNameFull = $projectNameFull;
-            $this->directory = getcwd() . '/' . $this->projectNameSimple;
-        } else {
-            $this->setName($projectName);
-        }
-
-        if (!is_null($databaseCredentials)) {
-            $this->databaseCredentials = $databaseCredentials;
-        }
-
+    public function generateProperties() {
         // Generate ip address if necessary
         if (is_null($this->ipAddress)) {
             $this->ipAddress = $this->generateIpAddress();
         }
     }
 
-    public static function fromDirtfile($filename, $config)
+    public static function fromDirtfile($filename)
     {
         if (!file_exists($filename)) {
             throw new \RuntimeException('Dirtfile does not exist: ' . $filename);
@@ -57,10 +44,15 @@ class Project {
             throw new \RuntimeException('Invalid file format, could not read Dirtfile');
         }
 
-        $project = new Project($projectData->name, $config, $projectData->name_full, (array)$projectData->database);
+        $project = new Project;
+
+        $project->setName($projectData->name, $projectData->name_full);
+        $project->setDatabaseCredentials((array)$projectData->database);
+
         $project->setDevUrl($projectData->urls->dev);
         $project->setStagingUrl($projectData->urls->staging);
         $project->setProductionUrl($projectData->urls->production);
+
         $project->setDirectory(dirname($filename));
 
         if (isset($projectData->production_directory)) {
@@ -81,6 +73,14 @@ class Project {
     }
 
     /**
+     * Sets the Dirt configuration instance
+     * @param Dirt\Configuration $config Dirt configuration instance
+     */
+    public function setConfig($config) {
+        $this->config = $config;
+    }
+
+    /**
      * Returns the project's name
      * @param bool $simple Should it be in the simple form?
      * @return string
@@ -91,21 +91,33 @@ class Project {
     }
 
     /**
-     * Set's the project name
+     * Set's the project name and generates paths among
+     * other things based on the name
      * @param type $description 
      */
-    public function setName($projectName)
+    public function setName($projectName, $projectNameFull = null)
     {
-        $this->projectNameFull = $projectName;
+        // If both the regular and simple project name has already been specified
+        // then just use these.
+        if ($projectNameFull != null) {
+            $this->projectNameSimple = $projectName;
+            $this->projectNameFull = $projectNameFull;
+        } else {
+            $this->projectNameFull = $projectName;
 
-        $simpleName = str_replace(' ', '-', $this->projectNameFull);
-        $this->projectNameSimple = trim(preg_replace('/[^a-zA-Z0-9-]+/', '', $simpleName), '-');
+            // Generate simple project name from the full project name
+            $simpleName = str_replace(' ', '-', $this->projectNameFull);
+            $this->projectNameSimple = trim(preg_replace('/[^a-zA-Z0-9-]+/', '', $simpleName), '-');
 
-        $this->devUrl = strtolower($this->projectNameSimple) . $this->config->environments->dev->domain_suffix;
-        $this->stagingUrl = strtolower($this->projectNameSimple) . $this->config->environments->staging->domain_suffix;
-        $this->productionUrl = strtolower($this->projectNameSimple) . $this->config->environments->production->domain_suffix;
-        
-        $this->directory = getcwd() . '/' . $this->projectNameSimple;
+            // Set urls and directory based off of the given project name
+            foreach (['dev', 'staging', 'production'] as $environment) {
+                if ($this->config && isset($this->config->environments->$environment->domain_suffix)) {
+                    $this->{$environment . 'Url'} = strtolower($this->projectNameSimple) . $this->config->environments->$environment->domain_suffix;
+                } else {
+                    $this->{$environment . 'Url'} = strtolower($this->projectNameSimple);
+                }
+            }
+        }
     }
 
     /**
@@ -243,10 +255,6 @@ class Project {
      */
     public function getProductionDirectory()
     {
-        if (is_null($this->productionDirectory) || empty($this->productionDirectory)) {
-            return '/var/sites/shared_hosting/' . $this->getProductionUrl(false);
-        }
-
         return $this->productionDirectory;
     }
 
@@ -323,6 +331,17 @@ class Project {
         }
 
         return $credentials;
+    }
+
+    /**
+     * Sets the database credentials. This is used if existing
+     * database credentials are loaded from a configuration file
+     * and needs to be filled into the model
+     * @param array $databaseCredentials Associative array with database credentials for each environment
+     */
+    public function setDatabaseCredentials($databaseCredentials)
+    {
+        $this->databaseCredentials = $databaseCredentials;
     }
 
     /**

@@ -40,7 +40,8 @@ class ApplyCommand extends Command
         if (!file_exists($dirtfileName)) {
             throw new \RuntimeException('Not a valid project directory, Dirtfile.json could not be found.');
         }
-        $project = Project::fromDirtfile($dirtfileName, $this->config);
+        $project = Project::fromDirtfile($dirtfileName);
+        $project->setConfig($this->config);
 
         // Check if Vagrantfile exists
         if (file_exists($project->getDirectory() . '/Vagrantfile'))

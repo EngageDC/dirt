@@ -57,7 +57,9 @@ class CreateCommand extends Command
         $this->output = $output;
 
         // Define the new project's metadata
-        $this->project = new Project($input->getArgument('name'), $this->config);
+        $this->project = new Project($input->getArgument('name'));
+        $this->project->setConfig($this->config);
+        $this->project->setDirectory(getcwd() . '/' . $project->getName(true));
         $this->project->setDescription($input->getOption('description'));
 
         // Check if directory already exists
