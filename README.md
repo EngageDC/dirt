@@ -5,7 +5,7 @@ Dirt is a slightly opinionated deployment tool for getting projects Done In Reco
 
 > **Note:** Dirt is a work in progress and is not quite ready for showtime yet.
 
-![Screenshot of dirt in action](http://i.imgur.com/Wd5hhQO.png)
+![Screenshot of dirt in action](http://i.imgur.com/qAw55hK.gifv)
 
 ## Requirements
 Dirt has been tested and is actively being used on OS X 10.10. It has however previously been used with Ubuntu Linux and Windows 7/8 and should still work on these platforms. Please open an issue if you experience any problems.
@@ -67,6 +67,3 @@ When using dirt with a team, you might want to share common configuration with a
 * Default database server is MySQL
 * All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
 * Developers does not have root access on production
-
-## Additional screenshots
-![Creating a new project](http://i.imgur.com/GLOkkIs.png)
