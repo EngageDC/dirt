@@ -8,15 +8,22 @@ use Symfony\Component\Console\Input\InputArgument;
 
 class DirtApplication extends Application {
 
-    public function __construct() {
-        $message = "       ___      __ \n"
-                 . "  ____/ (_)____/ /_\n"
-                 . " / __  / / ___/ __/\n"
-                 . "/ /_/ / / /  / /_  \n"
-                 . "\__,_/_/_/   \__/  \n"
-                 ." dirt [Done In Record Time]";
+    private static $logo =   '
+       ___      __ 
+  ____/ (_)____/ /_
+ / __  / / ___/ __/
+/ /_/ / / /  / /_  
+\__,_/_/_/   \__/  
 
-        parent::__construct($message, '1.0.0');
+';
+
+    private static $name = 'dirt [Done In Record Time]';
+    private static $version = '1.0.0';
+
+    public function __construct() {
+
+
+        parent::__construct(self::$name, self::$version);
 
         $builder = new \DI\ContainerBuilder();
         $container = $builder->build();
@@ -30,6 +37,11 @@ class DirtApplication extends Application {
             $container->get('Dirt\Command\DatabaseDumpCommand'),
             $container->get('Dirt\Command\UpdateCommand')
         ));
+    }
+
+    public function getHelp()
+    {
+        return self::$logo . parent::getHelp();
     }
 
     protected function getDefaultInputDefinition()
