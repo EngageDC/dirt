@@ -9,7 +9,14 @@ use Symfony\Component\Console\Input\InputArgument;
 class DirtApplication extends Application {
 
     public function __construct() {
-        parent::__construct('dirt [Done In Record Time]', '1.0.0');
+        $message = "       ___      __ \n"
+                 . "  ____/ (_)____/ /_\n"
+                 . " / __  / / ___/ __/\n"
+                 . "/ /_/ / / /  / /_  \n"
+                 . "\__,_/_/_/   \__/  \n"
+                 ." dirt [Done In Record Time]";
+
+        parent::__construct($message, '1.0.0');
 
         $builder = new \DI\ContainerBuilder();
         $container = $builder->build();
