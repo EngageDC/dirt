@@ -10,6 +10,8 @@ use Symfony\Component\Process\Process;
 use Dirt\Project;
 use Dirt\Framework\Framework;
 use Dirt\TemplateHandler;
+use Dirt\Repositories\VersionControlRepositoryGitLab;
+use Dirt\Repositories\VersionControlRepositoryGitHub;
 
 class CreateCommand extends Command
 {
@@ -122,8 +124,10 @@ class CreateCommand extends Command
                     exit(1);
                 }
             }
-            $this->output->writeln('<info>OK</info>');
-            
+            $this->output->writeln('<info>OK</info>');   
+        } else {
+            // Just create the public directory
+            mkdir($this->project->getDirectory() . '/public');
         }
 
         // Output final project information
@@ -138,72 +142,9 @@ class CreateCommand extends Command
         $this->output->write('Creating repository... ');
 
         try {
-            if ($this->config->scm->type == 'github') {
-                $githubClient = new \Github\Client();
-                // Set authentication info
-                $githubClient->authenticate(
-                        $this->config->scm->username,
-                        $this->config->scm->password,
-                        \Github\Client::AUTH_HTTP_PASSWORD
-                );
-
-                // Create repository
-                $repo = $githubClient->api('repo')->create(
-                    $this->project->getName(),
-                    $this->project->getDescription(),
-                    $this->project->getStagingUrl(),
-                    false,
-                    $this->config->scm->organization
-                );
-
-                // Save the SSH repository URL
-                $this->project->setRepositoryUrl($repo['ssh_url']);                
-            } else {
-                $gitlabClient = new \Gitlab\Client($this->config->scm->domain . '/api/v3/');
-                // Set authentication info
-                $gitlabClient->authenticate($this->config->scm->private_token, \Gitlab\Client::AUTH_URL_TOKEN);
-
-                // Create repository
-                $project = NULL;
-                try {
-                    $project = $gitlabClient->api('projects')->create(
-                        $this->project->getName(),
-                        array(
-                            'description' => $this->project->getDescription()
-                        )
-                    );
-                } catch (\Exception $e) {
-                    // Gitlab throws a 404 error when a project with the name already exists in the user namespace
-                    if ($e->getCode() == 404) {
-                        // The Gitlab API doesn't seem to support deleting projects, so we'll have to keep it in the user namespace
-                        throw new \Exception('It looks like a project with this name already exists in your user namespace. Please verify and try again.');
-                    } else {
-                        throw new \Exception($e);
-                    }
-                }
-
-                // Move to group if necessary
-                if (isset($this->config->scm->group_id) && filter_var($this->config->scm->group_id, FILTER_VALIDATE_INT) !== FALSE) {
-                    sleep(4); // Wait a few seconds so we know that the project is fully available (gitlab have had problems throwing random 500 errors here)
-
-                    try {
-                        $response = $gitlabClient->api('groups')->transfer($this->config->scm->group_id, $project['id']);
-                    } catch (\Exception $e) {
-                        // Gitlab throws a 500 error when a project with the name already exists in the group
-                        if ($e->getCode() == 500) {
-                            // The Gitlab API doesn't seem to support deleting projects, so we'll have to keep it in the user namespace
-                            throw new \Exception('It looks like a project with this name already exists in the target group. The project have been kept in the user namespace. Please verify and try again.');
-                        } else {
-                            throw new \Exception($e);
-                        }
-                    }
-                    // Refresh project information
-                    $project = $gitlabClient->api('projects')->show($project['id']);
-                }
-
-                // Save the SSH repository URL
-                $this->project->setRepositoryUrl($project['ssh_url_to_repo']);
-            }
+            $versionControlRepository = ($this->config->scm->type == 'gitlab') ?
+                new VersionControlRepositoryGitLab($this->config) : new VersionControlRepositoryGitHub($this->config);
+            $versionControlRepository->createRepository($this->project);
 
             $this->output->writeln('<info>OK</info>');
         } catch (\Exception $e) {
