@@ -27,6 +27,12 @@ class TemplateHandler {
 	}
 
 	private function getTemplateFilePath($filename) {
+		// If this is not the staging vhost file, it must be a
+		// project template file
+		if ($filename != 'staging_vhost.conf') {
+			$filename = 'project/' . $filename;
+		}
+
 		// First look in team templates folder
 		$teamTemplatesFolder = __DIR__ . '/../../team/templates/';
 		if (file_exists($teamTemplatesFolder . '/' . $filename)) {

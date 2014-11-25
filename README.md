@@ -3,6 +3,8 @@
 # dirt
 Dirt is a slightly opinionated deployment tool for getting projects Done In Record Time -- designed with teams in mind.
 
+Dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. Dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
+
 > **Note:** Dirt is a work in progress and is not quite ready for showtime yet.
 
 ![Screenshot of dirt in action](http://i.imgur.com/qAw55hK.gif)
