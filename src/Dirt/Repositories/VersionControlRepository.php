@@ -9,7 +9,7 @@ interface VersionControlRepository
      * @param  Project $project Project object
      * @throws \Exception
      */
-    public function createRepository($project);
+    public function create($project);
 
 
     /**
@@ -17,6 +17,12 @@ interface VersionControlRepository
      * @param  Project $project Project object
      * @throws \Exception
      */
-    public function deleteRepository($project);
+    public function delete($project);
+
+    /**
+     * Checks if the specific project exists
+     * @param  Project $project Project object
+     */
+    public function exists($project);
 
 }

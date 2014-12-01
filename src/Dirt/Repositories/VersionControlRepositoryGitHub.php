@@ -11,7 +11,11 @@ class VersionControlRepositoryGitHub implements VersionControlRepository
         $this->config = $config;
     }
 
-    public function createRepository($project) {
+    public function create($project) {
+        if (!is_object($project) || !($project instanceof \Dirt\Project)) {
+            throw new \RuntimeException('Invalid project specified');
+        }
+
         $githubClient = new \Github\Client();
         // Set authentication info
         $githubClient->authenticate(
@@ -33,7 +37,11 @@ class VersionControlRepositoryGitHub implements VersionControlRepository
         $project->setRepositoryUrl($repo['ssh_url']);                
     }
 
-    public function deleteRepository($project) {
+    public function delete($project) {
+        throw new \BadFunctionCallException('Function not implemented yet'); // TODO
+    }
+
+    public function exists($project) {
         throw new \BadFunctionCallException('Function not implemented yet'); // TODO
     }
 

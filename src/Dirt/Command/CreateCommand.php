@@ -144,7 +144,7 @@ class CreateCommand extends Command
         try {
             $versionControlRepository = ($this->config->scm->type == 'gitlab') ?
                 new VersionControlRepositoryGitLab($this->config) : new VersionControlRepositoryGitHub($this->config);
-            $versionControlRepository->createRepository($this->project);
+            $versionControlRepository->create($this->project);
 
             $this->output->writeln('<info>OK</info>');
         } catch (\Exception $e) {
