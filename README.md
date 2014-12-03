@@ -21,6 +21,7 @@ Dirt is an essential part of our workflow here at [Engage](http://enga.ge) and h
   - [Creating a team configuration](#creating-a-team-configuration)
 - [Setting up a staging server](#setting-up-a-staging-server)
 - [Assumptions](#assumptions)
+- [Uninstalling](#uninstalling)
 
 ## Requirements
 Dirt has been tested and is actively being used on OS X 10.10. It has however previously been used with Ubuntu Linux and Windows 7/8 and should still work on these platforms. Please open an issue if you experience any problems.
@@ -268,3 +269,9 @@ As mentioned in the introduction, Dirt is opinionated to some extend. This is so
 * Deploying to staging is heavily automated (creating database accounts, etc.). Deploying to production is however super simple and doesn't do much more than compress the staging files (excluding `.git`), copy them to production and extract them in the correct directory.
 
 We warmly welcome changes that makes dirt less opinionated, so feel free to create an issue or pull request.
+
+## Uninstalling
+Should you no longer want Dirt on your system, you will just need to delete a few files.
+
+	rm -rf /usr/local/bin/dirt # Delete dirt installation
+	rm -rf ~/.dirt # Delete dirt user config file
