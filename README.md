@@ -250,6 +250,14 @@ When creating a database dump from staging, you can optionally specify the `--i`
 
 	$ dirt database:dump [-i|--import] dev|staging
 
+## Setting up a staging server
+We run Centos 6.5 on our staging server, but Dirt should be easily adoptable to other systems as well. This is what dirt expects:
+
+* SSH users are expected to have passwordless `sudo` access, so Apache can be reloaded and vhost files can be created.
+* Deployed websites are stored in `/var/www/sites/`
+* Apache vhost config files are created on a per-website basis and are stored in `/etc/httpd/sites-enabled`
+* Dirt users should have access to a MySQL account that allows creation of databases and users
+
 ## Assumptions
 As mentioned in the introduction, Dirt is opinionated to some extend. This is some of the assumptions we make:
 

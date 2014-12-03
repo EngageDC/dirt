@@ -264,6 +264,7 @@ class StagingDeployer extends Deployer
         $this->output->writeln('<info>OK</info>');
 
         // Verify initial setup
+        // TODO: We should make the vhost path configurable and use sites-available with symlinking
         $this->output->write('Checking if site has been configured... ');
         $response = $this->ssh->exec('cat /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
         if (strpos($response, 'No such file or directory') !== FALSE) {
