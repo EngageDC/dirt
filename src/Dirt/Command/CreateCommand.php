@@ -49,6 +49,12 @@ class CreateCommand extends Command
                InputOption::VALUE_REQUIRED,
                'Optionally specify a project description'
             )
+            ->addOption(
+                'skip-repository',
+                null,
+                InputOption::VALUE_NONE,
+                'If set, the remote GitHub/GitLab repository will not be created'
+            )
         ;
     }
 
@@ -91,7 +97,12 @@ class CreateCommand extends Command
 
         // Perform project creation actions
         $output->writeln('Creating new project in ' . $this->project->getDirectory());
-        $this->createRepository();
+        
+        // Only create repository if skip-repository flag hasn't been set
+        if (!$input->getOption('skip-repository')) {
+            $this->createRepository();
+        }
+
         $this->initializeProjectDirectory();
         
         // Install framework if needed
@@ -111,9 +122,12 @@ class CreateCommand extends Command
 
             $commands = array(
                 'git add -A .',
-                'git commit -m "Added '. $this->project->getFramework()->getName(false) .'"',
-                'git push origin master'
+                'git commit -m "Added '. $this->project->getFramework()->getName(false) .'"'
             );
+
+            if (!$input->getOption('skip-repository')) {
+                $commands[] = 'git push origin master';
+            }
 
             foreach ($commands as $command) {
                 $process->setCommandLine($command);
@@ -184,10 +198,13 @@ class CreateCommand extends Command
         $commands = array(
             'git init',
             'git add -A .',
-            'git commit -m "Initial commit, added README, gitignore, Dirtfile and Vagrantfile"',
-            'git remote add origin ' . $this->project->getRepositoryUrl(),
-            'git push -u origin master'
+            'git commit -m "Initial commit, added README, gitignore, Dirtfile and Vagrantfile"'
         );
+
+        if (!$this->input->getOption('skip-repository')) {
+            $commands[] = 'git remote add origin ' . $this->project->getRepositoryUrl();
+            $commands[] = 'git push -u origin master';
+        }
 
         foreach ($commands as $command) {
             $process->setCommandLine($command);

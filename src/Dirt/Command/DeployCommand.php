@@ -51,6 +51,12 @@ class DeployCommand extends Command
                 InputOption::VALUE_NONE,
                 'Say yes to all prompts'
             )
+            ->addOption(
+                'no',
+                'n',
+                InputOption::VALUE_NONE,
+                'Say no to all prompts'
+            )
         ;
     }
 
@@ -76,11 +82,11 @@ class DeployCommand extends Command
         }
         elseif ($environmentArgument[0] == 'p')
         {
-            if ($input->getOption('yes') || $dialog->askConfirmation(
+            if (!$input->getOption('no') && ($input->getOption('yes') || $dialog->askConfirmation(
                     $output,
                     '<question>This will make a complete physical copy of the files from the staging environment to the production server, do you want to continue?</question> ',
                     false
-                ))
+                )))
             {
                 $deployer = new ProductionDeployer();
             }
@@ -102,15 +108,16 @@ class DeployCommand extends Command
         $deployer->setConfig($this->config);
         $deployer->setVerbose($input->getOption('verbose'));
         $deployer->setYes($input->getOption('yes'));
+        $deployer->setNo($input->getOption('no'));
 
         // Undeploy?
         if ($input->getOption('undeploy'))
         {
-            if ($input->getOption('yes') || $dialog->askConfirmation(
+            if (!$input->getOption('no') && ($input->getOption('yes') || $dialog->askConfirmation(
                     $output,
                     '<question>This will completely remove the project from the remote server, do you want to continue?</question> ',
                     false
-                ))
+                )))
             {
                 $deployer->undeploy();
             }

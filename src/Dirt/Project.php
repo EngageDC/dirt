@@ -152,10 +152,10 @@ class Project {
         }
 
         if (!isset($config['remote origin']) || !isset($config['remote origin']['url'])) {
-            throw new \RuntimeException('Could not find git remote URL');
+            $this->setRepositoryUrl(null);
+        } else {
+            $this->setRepositoryUrl($config['remote origin']['url']);
         }
-
-        $this->setRepositoryUrl($config['remote origin']['url']);
     }
 
     /**

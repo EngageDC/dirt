@@ -30,11 +30,11 @@ class ProductionDeployer extends Deployer
 
         $this->output->writeln('');
         $this->output->writeln('Deployment finished to <comment>'. $this->project->getProductionUrl() .'</comment>');
-        if ($this->yes || $this->dialog->askConfirmation(
+        if (!$this->no && ($this->yes || $this->dialog->askConfirmation(
             $this->output,
             '<question>Do you want to open your webbrowser now?</question> ',
             true
-        ))
+        )))
         {
             $process = new Process((defined('PHP_WINDOWS_VERSION_BUILD') ? 'start' : 'open') . ' ' . $this->project->getProductionUrl());
             $process->run();

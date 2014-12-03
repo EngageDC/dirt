@@ -12,6 +12,7 @@ abstract class Deployer
     protected $config;
     protected $verbose = false;
     protected $yes = false;
+    protected $no = false;
     
     public function setInput($input)
     {
@@ -48,6 +49,11 @@ abstract class Deployer
         $this->yes = $yes;
     }
 
+    public function setNo($no)
+    {
+        $this->no = $no;
+    }
+
     public function dumpDatabase($shouldImport = false)
     {
         // Create hash to avoid collisions
@@ -63,6 +69,10 @@ abstract class Deployer
         @mkdir($this->project->getDirectory() . '/db');
 
         // Check if file already exists
+        if ($this->no) {
+            return;
+        }
+        
         if (!$this->yes) {
             if (file_exists($structureFile) || file_exists($contentFile)) {
                 if (!$this->dialog->askConfirmation(

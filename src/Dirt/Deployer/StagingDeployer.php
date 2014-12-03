@@ -32,11 +32,11 @@ class StagingDeployer extends Deployer
 
         $this->output->writeln('');
         $this->output->writeln('Deployment finished to <comment>'. $this->project->getStagingUrl() .'</comment>');
-        if ($this->yes || $this->dialog->askConfirmation(
+        if (!$this->no && ($this->yes || $this->dialog->askConfirmation(
             $this->output,
             '<question>Do you want to open your webbrowser now?</question> ',
             true
-        ))
+        )))
         {
             $process = new Process((defined('PHP_WINDOWS_VERSION_BUILD') ? 'start' : 'open') . ' ' . $this->project->getStagingUrl());
             $process->run();
@@ -429,6 +429,10 @@ class StagingDeployer extends Deployer
     {
         // Ask for confirmation first
         $this->output->writeln('');
+        if ($this->no) {
+            return;
+        }
+        
         if (!$this->yes) {
             if (!$this->dialog->askConfirmation(
                 $this->output,

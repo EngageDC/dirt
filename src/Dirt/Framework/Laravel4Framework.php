@@ -74,11 +74,11 @@ class Laravel4Framework extends Framework
         rmdir($project->getDirectory() . '/public/public');
 
         // Create config directory for each environment
-        $this->createDatabaseConfig($project->getDirectory(), $project->getDatabaseCredentials('dev'), 'dev');
+        $this->createDatabaseConfig($project->getDirectory(), $project->getDatabaseCredentials('dev'), 'local');
         $this->createDatabaseConfig($project->getDirectory(), $project->getDatabaseCredentials('staging'), 'staging');
 
         // Add environments to start.php
-        $this->updateEnvironmentDetection($project->getDirectory());
+        $this->updateEnvironmentDetection($project);
 
         // Merge Laravel gitignore file with gitignore template
         $originalGitignore = file_get_contents($project->getDirectory() . '/.gitignore');
@@ -129,7 +129,7 @@ class Laravel4Framework extends Framework
     private function createDatabaseConfig($directory, $databaseCredentials, $environment)
     {
         // Only continue if we are in an environment that supports database handling
-        if ($environment != 'dev' && $environment != 'staging')
+        if ($environment != 'local' && $environment != 'staging')
             return;
 
         // Define config directory
@@ -174,16 +174,16 @@ class Laravel4Framework extends Framework
         file_put_contents($environmentDirectory . '/database.php', $finalConfig);
     }
 
-    private function updateEnvironmentDetection($directory)
+    private function updateEnvironmentDetection($project)
     {
         // Define environments
         $validEnvironments = array(
-            'dev' => '*.local',
-            'staging' => 'stage'
+            'local' => $project->getName(), // Hostname in vagrant is usually set to the simple project name
+            'staging' => 'stage' // Staging server hostname
         );
 
         // Load config file
-        $sourceConfig = file_get_contents($directory . '/bootstrap/start.php');
+        $sourceConfig = file_get_contents($project->getDirectory() . '/bootstrap/start.php');
         $configLines = explode("\n", $sourceConfig);
 
         $isInMySQLSection = false;
@@ -199,6 +199,6 @@ class Laravel4Framework extends Framework
 
         // Save config file
         $finalConfig = implode("\n", $configLines);
-        file_put_contents($directory . '/bootstrap/start.php', $finalConfig);
+        file_put_contents($project->getDirectory() . '/bootstrap/start.php', $finalConfig);
     }
 }
