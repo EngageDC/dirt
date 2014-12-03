@@ -5,7 +5,7 @@ Dirt is a slightly opinionated deployment and development workflow tool for gett
 
 Dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. Dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
 
-> **Note:** Dirt is a work in progress and is not quite ready for showtime yet.
+Dirt is an essential part of our workflow here at [Engage](http://enga.ge) and has been in use and under development since 2012.
 
 ![Screenshot of dirt in action](http://i.imgur.com/qAw55hK.gif)
 
@@ -19,6 +19,7 @@ Dirt can assist you and your team with creating and configuring web projects as 
   - [Deployment](#deployment)
   - [Database dumping](#database-dumping)
   - [Creating a team configuration](#creating-a-team-configuration)
+- [Setting up a staging server](#setting-up-a-staging-server)
 - [Assumptions](#assumptions)
 
 ## Requirements
@@ -61,7 +62,7 @@ Team configuration is optional. The team configuration file is required to be st
 
 Using the default install location, that location would be: `/usr/local/bin/dirt/team/config.php`. If the file exists, it will be loaded automatically. The `team` directory doesn't exist per default, so it will need to be created.
 
-GitLab Example:
+### GitLab Example:
 ```php
 <?php // /usr/local/bin/dirt/team/config.php
 return [
@@ -93,7 +94,7 @@ return [
 ];
 ```
 
-GitHub Example:
+### GitHub Example:
 ```php
 <?php // /usr/local/bin/dirt/team/config.php
 return [
@@ -126,7 +127,7 @@ return [
 ## User configuration
 The user configuration file is **required**. Any user configuration properties will **overwrite** the team configuration.
 
-GitLab w/ team config example:
+### GitLab w/ team config example:
 ```php
 <?php // /Users/codemonkey/.dirt
 return [
@@ -151,7 +152,7 @@ return [
 ];
 ```
 
-GitHub w/ team config example:
+### GitHub w/ team config example:
 ```php
 <?php // /Users/codemonkey/.dirt
 return [
@@ -177,7 +178,7 @@ return [
 ];
 ```
 
-GitHub example without a team config:
+### GitHub example without a team config:
 ```php
 <?php // /Users/codemonkey/.dirt
 return [
@@ -215,14 +216,32 @@ return [
 ## Usage
 
 ### Create project
-The only required parameter is the project name. A description and framework can optionally be specified. If the framework parameter is set, dirt will download and add that framework to the repository.
+The only required parameter is the project name. A description and framework can optionally be specified. If the framework parameter is set, dirt will download, configure and add that framework to the repository.
 
-	$ dirt create [-f|--framework="..."] [-d|--description="..."] name
+The `--skip-repository` option allows you to skip creating a GitHub/GitLab repository for the project, this is usually if you want to use a different remote or prefer to work with it locally only for the time being.
+
+	$ create [-f|--framework="..."] [-d|--description="..."] [--skip-repository] name
 
 ### Deployment
 Dirt handles deployment to both the staging and production environment, the deployment process can be invoked by calling:
 
-	$ dirt deploy staging|production
+	$ deploy [-u|--undeploy] [-v|--verbose] [-y|--yes] [-n|--no] staging|production
+
+Deploying till staging will do the following things:
+* Dirt will ensure that any local git changes will be added/committed/pushed (You will be prompted for a commit message if there is any changes)
+* All changes will be merged to the *staging* branch
+
+If this is the first time the project is being deployed:
+* An Apache vhost file is being generated, syntax checked and Apache is being reloaded
+* The git repository will be cloned to the staging server in `/var/www/sites/sitename`
+* A MySQL database and user is generated for the site
+* You will be prompted to optionally sync the dev database to staging
+
+In all cases:
+* The current framework (if any) is being configured -- e.g. for Laravel we will run `artisan migrate`, chmod the `storage` folder, etc.
+* Latest changes are being synced using `git fetch` & `git reset`
+
+If you specify the undeploy parameter, the process will be reversed. Meaning, the files will be deleted from the server, the MySQL account and database will be removed and the apache vhost file will be deleted as well. This is usually for removing a project from the staging server that you no longer wish to have there.
 
 ### Database dumping
 This allows you to create a MySQL database dump of either the development or staging environment.
@@ -231,10 +250,13 @@ When creating a database dump from staging, you can optionally specify the `--i`
 
 	$ dirt database:dump [-i|--import] dev|staging
 
-## Creating a team configuration
-When using dirt with a team, you might want to share common configuration with all team members.
-
 ## Assumptions
+As mentioned in the introduction, Dirt is opinionated to some extend. This is some of the assumptions we make:
+
+* Staging server is running Apache (An apache vhost config file is created)
 * Default database server is MySQL
 * All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
 * Developers does not have root access on production
+* Deploying to staging is heavily automated (creating database accounts, etc.). Deploying to production is however super simple and doesn't do much more than compress the staging files (excluding `.git`), copy them to production and extract them in the correct directory.
+
+We warmly welcome changes that makes dirt less opinionated, so feel free to create an issue or pull request.
