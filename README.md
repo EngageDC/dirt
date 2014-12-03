@@ -265,7 +265,7 @@ As mentioned in the introduction, Dirt is opinionated to some extend. This is so
 * Staging server is running Apache (An apache vhost config file is created)
 * Default database server is MySQL
 * All developers have root access to the staging server via *sudo* (For adding a vhost config, reloading apache, etc.)
-* Developers does not have root access on production
+* Developers do not have root access on production
 * Deploying to staging is heavily automated (creating database accounts, etc.). Deploying to production is however super simple and doesn't do much more than compress the staging files (excluding `.git`), copy them to production and extract them in the correct directory.
 
 We warmly welcome changes that makes dirt less opinionated, so feel free to create an issue or pull request.
