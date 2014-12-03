@@ -12,7 +12,7 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
 	protected static $versionControlRepository;
 	protected static $tmpFolder = null;
 	protected static $projectFolderName = 'Integration-Test-Project';
-	protected static $createCommand = 'dirt create "Integration Test Project" --description "This is just a test project created for the purpose of integration testing" && cd Integration-Test-Project && dirt deploy staging';
+	protected static $createCommand = 'dirt create "Integration Test Project" --description "This is just a test project created for the purpose of integration testing" && cd Integration-Test-Project';
 
 	public static function setUpBeforeClass() {
 		static::$config = new Configuration();
@@ -42,6 +42,28 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
 
 	public function testProjectConfig() {
 		$this->assertNotNull(static::$project, 'Project instance valid');
+	}
+
+	public function testDeployChange() {
+		// Make changes
+		$contents = sha1(time());
+		file_put_contents(static::$tmpFolder . '/' . static::$projectFolderName . '/public/index.html', $contents);
+
+		// Commit changes and then deploy
+		$commands = [
+			'git add public/index.html',
+			'git commit -m \'Updated index\'',
+			'dirt deploy staging --no'
+		];
+
+		foreach ($commands as $command) {
+			$process = new Process($command);
+	        $process->mustRun();
+		}
+
+		// Verify that contents exists and matches
+		$remoteContents = file_get_contents(static::$project->getStagingUrl());
+		$this->assertEquals($contents, $remoteContents);
 	}
 
 	public static function tearDownAfterClass() {
