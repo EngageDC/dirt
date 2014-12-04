@@ -1,13 +1,13 @@
 [![Build Status](https://travis-ci.org/EngageDC/dirt.svg)](https://travis-ci.org/EngageDC/dirt)
 
 # dirt
-Dirt is a slightly opinionated deployment and development workflow tool for getting projects Done In Record Time -- designed with teams in mind.
+dirt is a slightly opinionated deployment and development workflow tool for getting projects Done In Record Time -- designed with teams in mind.
 
-Dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. Dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
+dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
 
-Dirt is an essential part of our workflow here at [Engage](http://enga.ge) and has been in use and under development since 2012.
+dirt is an essential part of our workflow here at [Engage](http://enga.ge) and has been in use and under development since 2012.
 
-![Screenshot of dirt in action](http://i.imgur.com/qAw55hK.gif)
+![dirt in action](https://engage-assets.s3.amazonaws.com/dirtgif.gif)
 
 ## Contents
 - [Contents](#contents)
@@ -24,7 +24,7 @@ Dirt is an essential part of our workflow here at [Engage](http://enga.ge) and h
 - [Uninstalling](#uninstalling)
 
 ## Requirements
-Dirt has been tested and is actively being used on OS X 10.10. It has however previously been used with Ubuntu Linux and Windows 7/8 and should still work on these platforms. Please open an issue if you experience any problems.
+dirt has been tested and is actively being used on OS X 10.10. It has however previously been used with Ubuntu Linux and Windows 7/8 and should still work on these platforms. Please open an issue if you experience any problems.
 
 Before installing dirt, please make sure that your development machine has the following tools installed:
 
@@ -33,7 +33,7 @@ Before installing dirt, please make sure that your development machine has the f
 * [PHP 5.4+](http://php.net)
 * [Composer](http://getcomposer.org/download/)
 
-Per default, Dirt is configured to generate a Vagrantfile for you project. If you want use Vagrant, please make sure that the following tools are installed:
+Per default, dirt is configured to generate a Vagrantfile for you project. If you want use Vagrant, please make sure that the following tools are installed:
 
 * [VirtualBox](https://www.virtualbox.org)
 * [Vagrant](http://vagrantup.com)
@@ -54,12 +54,12 @@ Add dirt to your PATH so it can be used everywhere, e.g on OS X, you would do:
 	$ echo "export PATH=/usr/local/bin/dirt:\$PATH" >> ~/.bash_profile
 
 ## Configuration
-After installing dirt, you need to set up a configuration. Dirt allows you to set up a team specific and user specific configuration.
+After installing dirt, you need to set up a configuration. dirt allows you to set up a team specific and user specific configuration.
 
 You *could* put everything in the user-specific configuration file only, but it might make sense to share some things such as the staging server hostname and alike.
 
 ## Team configuration
-Team configuration is optional. The team configuration file is required to be stored in the `team/` folder in the Dirt root.
+Team configuration is optional. The team configuration file is required to be stored in the `team/` folder in the dirt root.
 
 Using the default install location, that location would be: `/usr/local/bin/dirt/team/config.php`. If the file exists, it will be loaded automatically. The `team` directory doesn't exist per default, so it will need to be created.
 
@@ -224,12 +224,12 @@ The `--skip-repository` option allows you to skip creating a GitHub/GitLab repos
 	$ create [-f|--framework="..."] [-d|--description="..."] [--skip-repository] name
 
 ### Deployment
-Dirt handles deployment to both the staging and production environment, the deployment process can be invoked by calling:
+dirt handles deployment to both the staging and production environment, the deployment process can be invoked by calling:
 
 	$ deploy [-u|--undeploy] [-v|--verbose] [-y|--yes] [-n|--no] staging|production
 
 Deploying till staging will do the following things:
-* Dirt will ensure that any local git changes will be added/committed/pushed (You will be prompted for a commit message if there is any changes)
+* dirt will ensure that any local git changes will be added/committed/pushed (You will be prompted for a commit message if there is any changes)
 * All changes will be merged to the *staging* branch
 
 If this is the first time the project is being deployed:
@@ -252,15 +252,15 @@ When creating a database dump from staging, you can optionally specify the `--i`
 	$ dirt database:dump [-i|--import] dev|staging
 
 ## Setting up a staging server
-We run Centos 6.5 on our staging server, but Dirt should be easily adoptable to other systems as well. This is what dirt expects:
+We run Centos 6.5 on our staging server, but dirt should be easily adoptable to other systems as well. This is what dirt expects:
 
 * SSH users are expected to have passwordless `sudo` access, so Apache can be reloaded and vhost files can be created.
 * Deployed websites are stored in `/var/www/sites/`
 * Apache vhost config files are created on a per-website basis and are stored in `/etc/httpd/sites-enabled`
-* Dirt users should have access to a MySQL account that allows creation of databases and users
+* dirt users should have access to a MySQL account that allows creation of databases and users
 
 ## Assumptions
-As mentioned in the introduction, Dirt is opinionated to some extend. This is some of the assumptions we make:
+As mentioned in the introduction, dirt is opinionated to some extend. This is some of the assumptions we make:
 
 * Staging server is running Apache (An apache vhost config file is created)
 * Default database server is MySQL
@@ -271,7 +271,7 @@ As mentioned in the introduction, Dirt is opinionated to some extend. This is so
 We warmly welcome changes that makes dirt less opinionated, so feel free to create an issue or pull request.
 
 ## Uninstalling
-Should you no longer want Dirt on your system, you will just need to delete a few files.
+Should you no longer want dirt on your system, you will just need to delete a few files.
 
 	rm -rf /usr/local/bin/dirt # Delete dirt installation
 	rm -rf ~/.dirt # Delete dirt user config file
