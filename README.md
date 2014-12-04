@@ -1,6 +1,7 @@
 [![Build Status](https://travis-ci.org/EngageDC/dirt.svg)](https://travis-ci.org/EngageDC/dirt)
 
 # dirt
+[![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/EngageDC/dirt?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 dirt is a slightly opinionated deployment and development workflow tool for getting projects Done In Record Time -- designed with teams in mind.
 
 dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
