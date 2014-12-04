@@ -30,7 +30,6 @@ class DirtApplication extends Application {
  
         $this->addCommands(array(
             $container->get('Dirt\Command\OpenCommand'),
-            $container->get('Dirt\Command\SetupCommand'),
             $container->get('Dirt\Command\CreateCommand'),
             $container->get('Dirt\Command\DeployCommand'),
             $container->get('Dirt\Command\ApplyCommand'),
