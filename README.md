@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/EngageDC/dirt.svg)](https://travis-ci.org/EngageDC/dirt)
 [![Gitter](https://badges.gitter.im/Join Chat.svg)](https://gitter.im/EngageDC/dirt?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Code Climate](https://codeclimate.com/github/EngageDC/dirt/badges/gpa.svg)](https://codeclimate.com/github/EngageDC/dirt)
 
 # dirt
 dirt is a slightly opinionated deployment and development workflow tool for getting projects Done In Record Time -- designed with teams in mind.
