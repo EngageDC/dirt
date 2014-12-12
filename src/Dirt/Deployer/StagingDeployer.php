@@ -4,6 +4,7 @@ namespace Dirt\Deployer;
 use Symfony\Component\Process\Process;
 use Dirt\Configuration;
 use Dirt\TemplateHandler;
+use Dirt\Tools\Git;
 
 class StagingDeployer extends Deployer
 {
@@ -133,117 +134,44 @@ class StagingDeployer extends Deployer
         // Verify local git repository
         $this->output->writeln('Pushing local changes (this may take a few minutes)...');
 
-        $process = new Process(null, $this->project->getDirectory());
-        $process->setTimeout(3600);
+        $git = new Git($this->project->getDirectory());
 
         // Make sure we are on the master branch
-        $process->setCommandLine('git checkout master');
-        $process->run();
-        if ($this->verbose) $this->output->write($process->getOutput());
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
+        $git->checkout('master');
 
         // Check if there is any local changes
-        $process->setCommandLine('git status');
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
+        $status = $git->status();
 
-        if (strpos($process->getOutput(), 'nothing to commit') === FALSE)
+        if (strpos($status, 'nothing to commit') === FALSE)
         {
             // Show diff
-            $process->setCommandLine('git diff');
-            $process->run();
-            if ($process->isSuccessful()) {
-                $this->output->writeln($process->getOutput());
-            }
+            $this->output->writeln($git->diff(false));
 
             $message = $this->dialog->ask(
                 $this->output,
                 '<question>You have uncommitted changes, please provide a commit message:</question> '
             );
 
-            $process->setCommandLine('git add -A .');
-            $process->run();
-            if (!$process->isSuccessful()) {
-                $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-                exit(1);
-            }
-
-            $process->setCommandLine('git commit -am ' . escapeshellarg($message));
-            $process->run();
-            if ($this->verbose) $this->output->write($process->getOutput());
-            if (!$process->isSuccessful()) {
-                $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-                exit(1);
-            }
+            $git->add('-A .');
+            $git->commit($message);
         }
 
         // Push all changes on master branch
-        $process->setCommandLine('git push origin master');
-        $process->run();
-        if ($this->verbose) $this->output->write($process->getOutput());
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
-
+        $git->push('origin master');
         // Make sure that the "staging" branch exists
-        $process->setCommandLine('git branch staging');
-        $process->run();
-
+        $git->branch('staging');
         // Check out the staging branch
-        $process->setCommandLine('git checkout staging');
-        if ($this->verbose) $this->output->write($process->getOutput());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
-
+        $git->checkout('staging');
         // Make sure staging is up to date
-        $process->setCommandLine('git fetch --all');
-        if ($this->verbose) $this->output->write($process->getOutput());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
-
+        $git->fetch('--all');
         // This will fail if the remote staging branch doesn't exist, so just ignore silently
-        $process->setCommandLine('git reset --hard origin/staging');
-        $process->run();
-
+        $git->reset('--hard origin/staging', false);
         // Merge changes
-        $process->setCommandLine('git merge master');
-        if ($this->verbose) $this->output->write($process->getOutput());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
-
+        $git->merge('master');
         // Push staging branch
-        $process->setCommandLine('git push origin staging');
-        if ($this->verbose) $this->output->write($process->getOutput());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
-
+        $git->push('origin staging');
         // Go back to master branch
-        $process->setCommandLine('git checkout master');
-        if ($this->verbose) $this->output->write($process->getOutput());
-        $process->run();
-        if (!$process->isSuccessful()) {
-            $this->output->writeln('<error>Error: Could not run "'. $process->getCommandLine() .'", git returned: ' . trim($process->getErrorOutput()) . '</error>');
-            exit(1);
-        }
+        $git->checkout('master');
     }
 
     /**
@@ -277,7 +205,7 @@ class StagingDeployer extends Deployer
         // Pull
         $this->output->writeln('Pulling changes...');
         $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && git fetch --all && git reset --hard origin/master');
-        
+
         if (strpos($response, 'Not a git repository') !== FALSE) {
             $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && rm -rf public/ && git clone '. $this->project->getRepositoryUrl() .' . && git checkout staging');
         }
@@ -433,7 +361,7 @@ class StagingDeployer extends Deployer
         if ($this->no) {
             return;
         }
-        
+
         if (!$this->yes) {
             if (!$this->dialog->askConfirmation(
                 $this->output,
@@ -473,7 +401,7 @@ class StagingDeployer extends Deployer
         }
 
         // Migrate MySQL dump
-        $this->output->write("\t" . 'Migrating database dump... ');        
+        $this->output->write("\t" . 'Migrating database dump... ');
         $response = $this->ssh->exec("sed -i 's/". $this->project->getDevUrl(false) ."/". $this->project->getStagingUrl(false) ."/g' /tmp/dev_". $fileHash ."_content.sql");
         if ($this->ssh->getExitStatus() != 0) {
             $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
@@ -489,7 +417,7 @@ class StagingDeployer extends Deployer
             $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
             exit(1);
         }
-        
+
         $response = $this->ssh->exec("mysql -u". $this->databaseCredentials['username'] ." -p". $this->databaseCredentials['password'] ." ". $this->databaseCredentials['database'] ." < /tmp/dev_". $fileHash ."_content.sql");
         if ($this->ssh->getExitStatus() != 0) {
             $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
@@ -497,7 +425,7 @@ class StagingDeployer extends Deployer
         }
 
         $this->output->writeln('<info>OK</info>');
-        
+
 
         // Clean up
         $this->output->write("\t" . 'Cleaning up... ');
