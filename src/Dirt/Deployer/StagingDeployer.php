@@ -134,7 +134,7 @@ class StagingDeployer extends Deployer
         // Verify local git repository
         $this->output->writeln('Pushing local changes (this may take a few minutes)...');
 
-        $git = new Git($this->project->getDirectory());
+        $git = new Git($this->project->getDirectory(), $this->output);
 
         // Make sure we are on the master branch
         $git->checkout('master');

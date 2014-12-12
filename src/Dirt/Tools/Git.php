@@ -9,12 +9,14 @@ class Git {
   private $process;
   private $directory;
   private $verbose;
+  private $output;
 
-  public function __construct($directory, $verbose = false) {
+  public function __construct($directory, $output, $verbose = false) {
     $this->process = new Process(null, $directory);
     $this->process->setTimeout(3600);
     $this->directory = $directory;
     $this->verbose = $verbose;
+    $this->output = $output;
   }
 
   public function checkout($branchName, $exitOnError = true) {
