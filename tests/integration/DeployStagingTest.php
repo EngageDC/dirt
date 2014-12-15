@@ -21,7 +21,7 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
     static::$tmpFolder = sys_get_temp_dir();
 
     // Output temp folder
-    //fwrite(STDERR, 'Temporary folder: ' . static::$tmpFolder . PHP_EOL);
+    fwrite(STDERR, 'Temporary folder: ' . static::$tmpFolder . PHP_EOL);
 
     // Use a tmp folder
     chdir(static::$tmpFolder);
@@ -32,6 +32,7 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
     // This will throw an exception if the process couldn't be executed
     // successfully (i.e. the process exited with a non-zero code)
     $process->mustRun();
+    fwrite(STDERR, $process->getOutput() . PHP_EOL);
 
     // Load project config
     static::$project = Project::fromDirtfile(static::$tmpFolder . '/' . static::$projectFolderName . '/Dirtfile.json');
@@ -58,8 +59,11 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
 
     foreach ($commands as $command) {
       $process = new Process($command);
+        fwrite(STDERR, $command . PHP_EOL);
           $process->mustRun();
+          fwrite(STDERR, $process->getOutput() . PHP_EOL);
     }
+    exit();
 
     // Verify that contents exists and matches
     $remoteContents = file_get_contents(static::$project->getStagingUrl());
@@ -77,7 +81,7 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
   }
 
   private static function cleanUp() {
-    // Run dirt undeploy
+    return;    // Run dirt undeploy
     $process = new Process('dirt deploy staging --undeploy --yes');
     $process->mustRun();
 

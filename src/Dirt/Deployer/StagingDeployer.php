@@ -4,7 +4,10 @@ namespace Dirt\Deployer;
 use Symfony\Component\Process\Process;
 use Dirt\Configuration;
 use Dirt\TemplateHandler;
-use Dirt\Tools\Git;
+use Dirt\Tools\LocalTerminal;
+use Dirt\Tools\RemoteTerminal;
+use Dirt\Tools\GitRunner;
+use Dirt\Tools\MySQLRunner;
 
 class StagingDeployer extends Deployer
 {
@@ -25,6 +28,7 @@ class StagingDeployer extends Deployer
      */
     public function deploy()
     {
+        $this->output->write('Deploy... ' . PHP_EOL);
         $this->databaseCredentials = $this->project->getDatabaseCredentials('staging');
 
         $this->synchronizeGit();
@@ -49,28 +53,26 @@ class StagingDeployer extends Deployer
      */
     public function undeploy()
     {
+        $this->output->write('Undeploy... ' . PHP_EOL);
+
         $this->databaseCredentials = $this->project->getDatabaseCredentials('staging');
 
         // Connect to server
         $this->output->write('Connecting to staging server... ');
 
-        $this->ssh = new \Net_SSH2($this->config->environments->staging->hostname, $this->config->environments->staging->port);
-        $key = new \Crypt_RSA();
-        $key->loadKey(file_get_contents($this->config->environments->staging->keyfile));
-        if (!$this->ssh->login($this->config->environments->staging->username, $key)) {
-            $this->output->writeln('<error>Error: Authentication failed</error>');
-            exit(1);
-        }
+        $ssh = new RemoteTerminal(
+                                    $this->config->environments->staging->hostname,
+                                    $this->config->environments->staging->port,
+                                    $this->config->environments->staging->keyfile,
+                                    $this->config->environments->staging->username,
+                                    $this->output
+                                  );
+
         $this->output->writeln('<info>OK</info>');
 
         // Remove vhost
         $this->output->write('Removing vhost... ');
-        $response = $this->ssh->exec('sudo rm /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $ssh->ignoreError()->run('sudo rm /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
 
         // Remove site directory
         $this->output->write('Removing site directory... ');
@@ -80,50 +82,29 @@ class StagingDeployer extends Deployer
             $this->output->writeln('<error>Error! Invalid site dir: '. $siteDir .'</error>');
         }
 
-        $response = $this->ssh->exec('sudo rm -rf /var/www/sites/' . $siteDir . '/');
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $ssh->ignoreError()->run('sudo rm -rf /var/www/sites/' . $siteDir . '/');
+
+        $mysql = new MySQLRunner(
+                                  $ssh,
+                                  $this->config->environments->staging->mysql->username,
+                                  $this->config->environments->staging->mysql->password
+                                );
 
         // Remove database
         $this->output->write('Removing database... ');
-        $response = $this->ssh->exec("mysql -u". $this->config->environments->staging->mysql->username ." -p". $this->config->environments->staging->mysql->password ." -e \"DROP DATABASE ". $this->databaseCredentials['database'] .";\"");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $mysql->ignoreError()->query("DROP DATABASE ". $this->databaseCredentials['database'] .";");
 
         // Remove database user
         $this->output->write('Removing database user... ');
-        $response = $this->ssh->exec("mysql -u". $this->config->environments->staging->mysql->username ." -p". $this->config->environments->staging->mysql->password ." -e \"DROP USER '". $this->databaseCredentials['username'] ."'@'localhost';\"");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $mysql->ignoreError()->query("DROP USER '". $this->databaseCredentials['username'] ."'@'localhost';");
 
         // Test config
         $this->output->write('Testing vhost config syntax... ');
-        $response = $this->ssh->exec('sudo /etc/init.d/httpd configtest');
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $ssh->ignoreError()->run('sudo /etc/init.d/httpd configtest');
 
         // Restart apache
         $this->output->write('Restarting httpd... ');
-        $response = $this->ssh->exec('sudo /etc/init.d/httpd graceful');
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $ssh->run('sudo /etc/init.d/httpd graceful');
     }
 
     /**
@@ -131,10 +112,13 @@ class StagingDeployer extends Deployer
      */
     private function synchronizeGit()
     {
+        $this->output->write('Synchronize Git... ' . PHP_EOL);
+
         // Verify local git repository
         $this->output->writeln('Pushing local changes (this may take a few minutes)...');
 
-        $git = new Git($this->project->getDirectory(), $this->output);
+        $terminal = new LocalTerminal($this->project->getDirectory(), $this->output);
+        $git = new GitRunner($terminal);
 
         // Make sure we are on the master branch
         $git->checkout('master');
@@ -145,7 +129,7 @@ class StagingDeployer extends Deployer
         if (strpos($status, 'nothing to commit') === FALSE)
         {
             // Show diff
-            $this->output->writeln($git->diff(false));
+            $this->output->writeln($git->ignoreError()->diff());
 
             $message = $this->dialog->ask(
                 $this->output,
@@ -157,7 +141,7 @@ class StagingDeployer extends Deployer
         }
 
         // Push all changes on master branch
-        $git->push('origin master');
+        $git->push('origin', 'master');
         // Make sure that the "staging" branch exists
         $git->branch('staging');
         // Check out the staging branch
@@ -165,11 +149,11 @@ class StagingDeployer extends Deployer
         // Make sure staging is up to date
         $git->fetch('--all');
         // This will fail if the remote staging branch doesn't exist, so just ignore silently
-        $git->reset('--hard origin/staging', false);
+        $git->ignoreError()->reset('--hard', 'origin/staging');
         // Merge changes
         $git->merge('master');
         // Push staging branch
-        $git->push('origin staging');
+        $git->push('origin', 'staging');
         // Go back to master branch
         $git->checkout('master');
     }
@@ -179,22 +163,27 @@ class StagingDeployer extends Deployer
      */
     private function synchronizeRemoteFiles()
     {
+        $this->output->write('Synchronize Remote Files... ' . PHP_EOL);
+
         // Connect to server
         $this->output->write('Connecting to staging server... ');
 
-        $this->ssh = new \Net_SSH2($this->config->environments->staging->hostname, $this->config->environments->staging->port);
-        $key = new \Crypt_RSA();
-        $key->loadKey(file_get_contents($this->config->environments->staging->keyfile));
-        if (!$this->ssh->login($this->config->environments->staging->username, $key)) {
-            $this->output->writeln('<error>Error: Authentication failed</error>');
-            exit(1);
-        }
+        $ssh = new RemoteTerminal(
+                                  $this->config->environments->staging->hostname,
+                                  $this->config->environments->staging->port,
+                                  $this->config->environments->staging->keyfile,
+                                  $this->config->environments->staging->username,
+                                  $this->output
+                                );
+
+        $this->ssh = $ssh->getSSHConnection();
+
         $this->output->writeln('<info>OK</info>');
 
         // Verify initial setup
         // TODO: We should make the vhost path configurable and use sites-available with symlinking
         $this->output->write('Checking if site has been configured... ');
-        $response = $this->ssh->exec('cat /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
+        $response = $ssh->ignoreError()->run('cat /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
         if (strpos($response, 'No such file or directory') !== FALSE) {
             $this->output->writeln('<comment>Nope</comment>');
             $this->configureStagingServer();
@@ -204,10 +193,19 @@ class StagingDeployer extends Deployer
 
         // Pull
         $this->output->writeln('Pulling changes...');
-        $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && git fetch --all && git reset --hard origin/master');
+        $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+
+        $git = new GitRunner($ssh);
+        $response = $git->ignoreError()->fetch('--all');
+        $response .= $git->ignoreError()->reset('--hard origin/master');
 
         if (strpos($response, 'Not a git repository') !== FALSE) {
-            $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && rm -rf public/ && git clone '. $this->project->getRepositoryUrl() .' . && git checkout staging');
+          $this->output->writeln('Setting up repository...');
+          $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+          $ssh->run('rm -rf public/');
+
+          $git->ignoreError()->clone($this->project->getRepositoryUrl());
+          $git->ignoreError()->checkout('staging');
         }
 
         $this->output->writeln($response);
@@ -217,7 +215,7 @@ class StagingDeployer extends Deployer
             $this->output->write('Configuring '. $this->project->getFramework()->getName() .'... ');
 
             try {
-                $this->project->getFramework()->configureEnvironment('staging', $this->project, $this->ssh);
+                $this->project->getFramework()->configureEnvironment('staging', $this->project, $ssh->getSSHConnection());
                 $this->output->writeln('<info>OK</info>');
             } catch (\Exception $e) {
                 $this->output->writeln('<error>Error: '. $e->getMessage() .'</error>');
@@ -229,15 +227,20 @@ class StagingDeployer extends Deployer
         $this->output->write('Updating file permissions ');
 
         // Check if we have sudo access by running simple command via sudo
-        $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && sudo chgrp -R webdata . && sudo chmod -R g+w .');
+        $response = $ssh->ignoreError()->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+        $response .= $ssh->ignoreError()->run('sudo chgrp -R webdata .');
+        $response .= $ssh->ignoreError()->run('sudo chmod -R g+w .');
 
         // No sudo access?
         if (strpos($response, 'incorrect password attempts') !== FALSE) {
             $this->output->write('without sudo...');
-            $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && chgrp -R webdata . && chmod -R g+w .');
+            $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+            $ssh->run('chgrp -R webdata . && chmod -R g+w .');
         } else {
             $this->output->write('via sudo...');
-            $response = $this->ssh->exec('cd /var/www/sites/' . $this->project->getStagingUrl(false) . ' && sudo chgrp -R webdata . && sudo chmod -R g+w .');
+            $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+            $ssh->run('sudo chgrp -R webdata .');
+            $ssh->run('sudo chmod -R g+w .');
         }
 
         $this->output->writeln('<info>OK</info>');
@@ -248,6 +251,8 @@ class StagingDeployer extends Deployer
      */
     private function configureStagingServer()
     {
+        $this->output->write('Configure Staging Server... ' . PHP_EOL);
+
         // Create vhost file
         $this->output->write("\t" . 'Creating vhost... ');
         $variables = array(
@@ -314,6 +319,7 @@ class StagingDeployer extends Deployer
      */
     private function synchronizeRemoteDatabase()
     {
+        $this->output->write('Synchronize Remote Database... ' . PHP_EOL);
         // Verify that database is set up
         $this->output->write('Checking if database has been configured... ');
         $response = $this->ssh->exec("mysql -u". $this->config->environments->staging->mysql->username ." -p". $this->config->environments->staging->mysql->password ." -e \"SHOW DATABASES LIKE '". $this->databaseCredentials['database'] ."'\" | grep ". $this->databaseCredentials['database']);
