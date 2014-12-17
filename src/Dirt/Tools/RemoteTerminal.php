@@ -9,6 +9,8 @@ class RemoteTerminal implements TerminalInterface {
   private $ssh;
   private $output;
   private $exitOnError = true;
+  private $isSession = false;
+  private $sessionCommands;
 
   public function __construct($hostname, $port, $keyfile, $username, $output) {
     $this->output = $output;
@@ -32,7 +34,28 @@ class RemoteTerminal implements TerminalInterface {
     return $this;
   }
 
+  public function startSession() {
+    $this->sessionCommands = [];
+    $this->isSession = true;
+    return $this;
+  }
+
+  public function executeSession() {
+    $this->isSession = false;
+    return $this->execute(implode(' && ', $this->sessionCommands));
+  }
+
   public function run($command) {
+    if ($this->isSession) {
+      $this->sessionCommands[] = $command;
+      return '';
+    }
+    else {
+      return $this->execute($command);
+    }
+  }
+
+  private function execute($command) {
     $response = $this->ssh->exec($command);
 
     if ($this->ssh->getExitStatus() != 0) {
@@ -45,6 +68,7 @@ class RemoteTerminal implements TerminalInterface {
       }
     }
 
+    $this->sessionCommands = [];
     $this->exitOnError = true;
     return $response;
   }

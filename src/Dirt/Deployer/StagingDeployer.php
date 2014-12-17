@@ -73,16 +73,20 @@ class StagingDeployer extends Deployer
         // Remove vhost
         $this->output->write('Removing vhost... ');
         $ssh->ignoreError()->run('sudo rm /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
+        $this->output->writeln('<info>OK</info>');
 
         // Remove site directory
         $this->output->write('Removing site directory... ');
         $siteDir = $this->project->getStagingUrl(false);
 
-        if (strlen($siteDir) <= 0) { // We don't want to risk wiping the whole sites directory, do we?
-            $this->output->writeln('<error>Error! Invalid site dir: '. $siteDir .'</error>');
-        }
 
-        $ssh->ignoreError()->run('sudo rm -rf /var/www/sites/' . $siteDir . '/');
+        if (strlen($siteDir) <= 0) { // We don't want to risk wiping the whole sites directory, do we?
+          $this->output->writeln('<error>Error! Invalid site dir: '. $siteDir .'</error>');
+        }
+        else {
+          $ssh->ignoreError()->run('sudo rm -rf /var/www/sites/' . $siteDir . '/');
+          $this->output->writeln('<info>OK</info>');
+        }
 
         $mysql = new MySQLRunner(
                                   $ssh,
@@ -91,20 +95,30 @@ class StagingDeployer extends Deployer
                                 );
 
         // Remove database
-        $this->output->write('Removing database... ');
+        $this->output->write('Removing database "' . $this->databaseCredentials['database'] . '"... ');
         $mysql->ignoreError()->query("DROP DATABASE ". $this->databaseCredentials['database'] .";");
+        $this->output->writeln('<info>OK</info>');
 
         // Remove database user
         $this->output->write('Removing database user... ');
         $mysql->ignoreError()->query("DROP USER '". $this->databaseCredentials['username'] ."'@'localhost';");
+        $this->output->writeln('<info>OK</info>');
 
         // Test config
         $this->output->write('Testing vhost config syntax... ');
-        $ssh->ignoreError()->run('sudo /etc/init.d/httpd configtest');
+        $response = $ssh->ignoreError()->run('sudo /etc/init.d/httpd configtest');
+
+        if (strpos($response, 'No such file or directory') === False) {
+          $this->output->writeln('<info>OK</info>');
+        }
+        else {
+          $this->output->writeln('<info>File does not exist. Already removed?</info>');
+        }
 
         // Restart apache
         $this->output->write('Restarting httpd... ');
         $ssh->run('sudo /etc/init.d/httpd graceful');
+        $this->output->writeln('<info>OK</info>');
     }
 
     /**
@@ -143,7 +157,7 @@ class StagingDeployer extends Deployer
         // Push all changes on master branch
         $git->push('origin', 'master');
         // Make sure that the "staging" branch exists
-        $git->branch('staging');
+        $git->ignoreError()->branch('staging');
         // Check out the staging branch
         $git->checkout('staging');
         // Make sure staging is up to date
@@ -184,6 +198,7 @@ class StagingDeployer extends Deployer
         // TODO: We should make the vhost path configurable and use sites-available with symlinking
         $this->output->write('Checking if site has been configured... ');
         $response = $ssh->ignoreError()->run('cat /etc/httpd/sites-enabled/site_'. strtolower($this->project->getName()) .'.conf');
+
         if (strpos($response, 'No such file or directory') !== FALSE) {
             $this->output->writeln('<comment>Nope</comment>');
             $this->configureStagingServer();
@@ -193,19 +208,28 @@ class StagingDeployer extends Deployer
 
         // Pull
         $this->output->writeln('Pulling changes...');
-        $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
 
+        $ssh->startSession();
+
+        $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
         $git = new GitRunner($ssh);
-        $response = $git->ignoreError()->fetch('--all');
-        $response .= $git->ignoreError()->reset('--hard origin/master');
+        $git->fetch('--all');
+        $git->reset('--hard origin/master');
+
+        $response = $ssh->ignoreError()->executeSession();
 
         if (strpos($response, 'Not a git repository') !== FALSE) {
-          $this->output->writeln('Setting up repository...');
+
+          $this->output->write('Setting up repository...');
+          $ssh->startSession();
+
           $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
           $ssh->run('rm -rf public/');
+          $git->clone($this->project->getRepositoryUrl() . ' .');
+          $git->checkout('staging');
 
-          $git->ignoreError()->clone($this->project->getRepositoryUrl());
-          $git->ignoreError()->checkout('staging');
+          $ssh->ignoreError()->executeSession();
+          $this->output->writeln('<info>OK</info>');
         }
 
         $this->output->writeln($response);
@@ -224,24 +248,15 @@ class StagingDeployer extends Deployer
         }
 
         // Update file permissions
-        $this->output->write('Updating file permissions ');
+        $this->output->write('Updating file permissions... ');
 
-        // Check if we have sudo access by running simple command via sudo
-        $response = $ssh->ignoreError()->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
-        $response .= $ssh->ignoreError()->run('sudo chgrp -R webdata .');
-        $response .= $ssh->ignoreError()->run('sudo chmod -R g+w .');
+        $ssh->startSession();
 
-        // No sudo access?
-        if (strpos($response, 'incorrect password attempts') !== FALSE) {
-            $this->output->write('without sudo...');
-            $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
-            $ssh->run('chgrp -R webdata . && chmod -R g+w .');
-        } else {
-            $this->output->write('via sudo...');
-            $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
-            $ssh->run('sudo chgrp -R webdata .');
-            $ssh->run('sudo chmod -R g+w .');
-        }
+        $ssh->run('cd /var/www/sites/' . $this->project->getStagingUrl(false));
+        $ssh->run('sudo chgrp -R webdata .');
+        $ssh->run('sudo chmod -R g+w .');
+
+        $ssh->executeSession();
 
         $this->output->writeln('<info>OK</info>');
     }

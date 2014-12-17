@@ -3,6 +3,7 @@ use Dirt\Tools\GitRunner;
 use Dirt\Tools\MySQLRunner;
 use Dirt\Tools\TerminalInterface;
 
+
 class TerminalTest extends \PHPUnit_Framework_TestCase
 {
   public function testGitRunner() {
@@ -23,9 +24,9 @@ class TerminalTest extends \PHPUnit_Framework_TestCase
     // Create a new project with a specific name
     $mysql = new MySQLRunner(new DummyTerminal(), 'username', 'password');
     $this->assertEquals($mysql->query('SELECT * FROM testDatabase WHERE a == b'),
-                        'mysql -u username -p password -e "SELECT * FROM testDatabase WHERE a == b"');
+                        'mysql -uusername -ppassword -e "SELECT * FROM testDatabase WHERE a == b"');
     $this->assertEquals($mysql->ignoreError()->query('SELECT * FROM testDatabase WHERE a == b'),
-                        'mysql -u username -p password -e "SELECT * FROM testDatabase WHERE a == b" --ignore_error');
+                        'mysql -uusername -ppassword -e "SELECT * FROM testDatabase WHERE a == b" --ignore_error');
 
   }
 }

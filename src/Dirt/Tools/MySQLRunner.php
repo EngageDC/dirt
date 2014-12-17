@@ -18,8 +18,8 @@ class MySQLRunner {
   }
 
   public function query($query) {
-    return $this->terminal->run("mysql -u " . $this->username .
-                                     " -p " . $this->password .
+    return $this->terminal->run("mysql -u" . $this->username .
+                                     " -p" . $this->password .
                                      " -e \"" . $query ."\"");
   }
 

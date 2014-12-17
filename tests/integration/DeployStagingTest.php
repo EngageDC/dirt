@@ -59,11 +59,10 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
 
     foreach ($commands as $command) {
       $process = new Process($command);
-        fwrite(STDERR, $command . PHP_EOL);
-          $process->mustRun();
-          fwrite(STDERR, $process->getOutput() . PHP_EOL);
+      fwrite(STDERR, $command . PHP_EOL);
+      $process->mustRun();
+      fwrite(STDERR, $process->getOutput() . PHP_EOL);
     }
-    exit();
 
     // Verify that contents exists and matches
     $remoteContents = file_get_contents(static::$project->getStagingUrl());
@@ -81,9 +80,10 @@ class DeployStagingTest extends \PHPUnit_Framework_TestCase
   }
 
   private static function cleanUp() {
-    return;    // Run dirt undeploy
+    // Run dirt undeploy
     $process = new Process('dirt deploy staging --undeploy --yes');
     $process->mustRun();
+    fwrite(STDERR, $process->getOutput() . PHP_EOL);
 
     // Delete folder
     if (static::$tmpFolder && static::$projectFolderName && strlen(static::$tmpFolder) > 2 && strlen(static::$projectFolderName) > 2) {
