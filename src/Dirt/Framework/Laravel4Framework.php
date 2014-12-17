@@ -28,8 +28,8 @@ class Laravel4Framework extends Framework
 
     /**
      * Start the framework installation process
-     * @param Project $project 
-     * @param function $progressCallback 
+     * @param Project $project
+     * @param function $progressCallback
      */
     public function install($project, $progressCallback = null)
     {
@@ -46,13 +46,13 @@ class Laravel4Framework extends Framework
         $sourceDir = $project->getDirectory() . '/public/';
         $destinationDir = $project->getDirectory() . '/';
         $files = scandir($sourceDir);
-        
+
         // Cycle through all source files
         foreach ($files as $file)
         {
             if (in_array($file, array('.', '..', 'public')))
                 continue;
-            
+
             // Move file
             rename($sourceDir . $file, $destinationDir . $file);
         }
@@ -61,13 +61,13 @@ class Laravel4Framework extends Framework
         $sourceDir = $project->getDirectory() . '/public/public/';
         $destinationDir = $project->getDirectory() . '/public/';
         $files = scandir($sourceDir);
-        
+
         // Cycle through all source files
         foreach ($files as $file)
         {
             if (in_array($file, array('.', '..')))
                 continue;
-            
+
             // Move file
             rename($sourceDir . $file, $destinationDir . $file);
         }
@@ -178,7 +178,7 @@ class Laravel4Framework extends Framework
     {
         // Define environments
         $validEnvironments = array(
-            'local' => $project->getName(), // Hostname in vagrant is usually set to the simple project name
+            'local' => strtolower()$project->getName()), // Hostname in vagrant is set to the simple project name
             'staging' => 'stage' // Staging server hostname
         );
 
