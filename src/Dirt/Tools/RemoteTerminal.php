@@ -4,72 +4,83 @@ namespace Dirt\Tools;
 
 use Symfony\Component\Process\Process;
 
-class RemoteTerminal implements TerminalInterface {
+class RemoteTerminal {
 
-  private $ssh;
-  private $output;
-  private $exitOnError = true;
-  private $isSession = false;
-  private $sessionCommands;
+    private $ssh;
+    private $output;
+    private $ignoreError = false;
+    private $isSession = false;
+    private $sessionCommands;
 
-  public function __construct($hostname, $port, $keyfile, $username, $output) {
-    $this->output = $output;
+    public function __construct($config, $output) {
+        $this->output = $output;
 
-    $this->ssh = new \Net_SSH2($hostname, $port);
-    $key = new \Crypt_RSA();
-    $key->loadKey(file_get_contents($keyfile));
+        $this->ssh = new \Net_SSH2($config['hostname'], $config['port']);
+        $key = new \Crypt_RSA();
+        $key->loadKey(file_get_contents($config['keyfile']));
 
-    if (!$this->ssh->login($username, $key)) {
-      $this->output->writeln('<error>Error: Authentication failed</error>');
-      exit(1);
-    }
-  }
-
-  public function getSSHConnection() {
-    return $this->ssh;
-  }
-
-  public function ignoreError() {
-    $this->exitOnError = false;
-    return $this;
-  }
-
-  public function startSession() {
-    $this->sessionCommands = [];
-    $this->isSession = true;
-    return $this;
-  }
-
-  public function executeSession() {
-    $this->isSession = false;
-    return $this->execute(implode(' && ', $this->sessionCommands));
-  }
-
-  public function run($command) {
-    if ($this->isSession) {
-      $this->sessionCommands[] = $command;
-      return '';
-    }
-    else {
-      return $this->execute($command);
-    }
-  }
-
-  private function execute($command) {
-    $response = $this->ssh->exec($command);
-
-    if ($this->ssh->getExitStatus() != 0) {
-      if($this->exitOnError) {
-        $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-        exit(1);
-      }
-      else {
-        $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
-      }
+        if (!$this->ssh->login($config['username'], $key)) {
+            $this->output->writeln('<error>Error: Authentication failed</error>');
+            throw new \RuntimeException("Error: Authentication failed");
+        }
     }
 
-    $this->sessionCommands = [];
-    $this->exitOnError = true;
-    return $response;
-  }
+    public function getSSHConnection() {
+        return $this->ssh;
+    }
+
+    public function ignoreError() {
+        $this->ignoreError = true;
+        return $this;
+    }
+
+    public function startSession() {
+        $this->sessionCommands = [];
+        $this->isSession = true;
+        return $this;
+    }
+
+    public function executeSession() {
+        if ($this->isSession) {
+            $this->isSession = false;
+            $response = $this->execute(implode(' && ', $this->sessionCommands));
+            $this->sessionCommands = [];
+            return $response;
+        }
+        else {
+            throw new \RuntimeException("Error: Need to start a terminal session before using executeSession");
+        }
+    }
+
+    public function add($command) {
+        if ($this->isSession) {
+            $this->sessionCommands[] = $command;
+            return $this;
+        }
+        else {
+            throw new \RuntimeException("Error: Need to start a terminal session before using add");
+        }
+    }
+
+    public function run($command) {
+        return $this->execute($command);
+    }
+
+    private function execute($command) {
+        $response = $this->ssh->exec($command);
+
+        if ($this->ssh->getExitStatus() != 0) {
+            if($this->ignoreError) {
+                $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
+            }
+            else {
+                $message = 'Error! Unexpected response: '. trim($response);
+                $this->output->writeln('<error>'. $message .'</error>');
+                throw new \RuntimeException($message);
+            }
+        }
+
+        $this->ignoreError = false;
+        return $response;
+    }
 }
