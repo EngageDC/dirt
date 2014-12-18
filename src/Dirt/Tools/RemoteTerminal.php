@@ -15,11 +15,11 @@ class RemoteTerminal {
     public function __construct($config, $output) {
         $this->output = $output;
 
-        $this->ssh = new \Net_SSH2($config['hostname'], $config['port']);
+        $this->ssh = new \Net_SSH2($config->hostname, $config->port);
         $key = new \Crypt_RSA();
-        $key->loadKey(file_get_contents($config['keyfile']));
+        $key->loadKey(file_get_contents($config->keyfile));
 
-        if (!$this->ssh->login($config['username'], $key)) {
+        if (!$this->ssh->login($config->username, $key)) {
             $this->output->writeln('<error>Error: Authentication failed</error>');
             throw new \RuntimeException("Error: Authentication failed");
         }
@@ -34,16 +34,10 @@ class RemoteTerminal {
         return $this;
     }
 
-    public function startSession() {
-        $this->sessionCommands = [];
-        $this->isSession = true;
-        return $this;
-    }
-
-    public function executeSession() {
+    public function execute() {
         if ($this->isSession) {
             $this->isSession = false;
-            $response = $this->execute(implode(' && ', $this->sessionCommands));
+            $response = $this->exec(implode(' && ', $this->sessionCommands));
             $this->sessionCommands = [];
             return $response;
         }
@@ -55,18 +49,19 @@ class RemoteTerminal {
     public function add($command) {
         if ($this->isSession) {
             $this->sessionCommands[] = $command;
-            return $this;
         }
         else {
-            throw new \RuntimeException("Error: Need to start a terminal session before using add");
+            $this->sessionCommands = [$command];
+            $this->isSession = true;
         }
+        return $this;
     }
 
     public function run($command) {
-        return $this->execute($command);
+        return $this->exec($command);
     }
 
-    private function execute($command) {
+    private function exec($command) {
         $response = $this->ssh->exec($command);
 
         if ($this->ssh->getExitStatus() != 0) {

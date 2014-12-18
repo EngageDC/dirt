@@ -6,6 +6,7 @@ use Dirt\Configuration;
 use Dirt\TemplateHandler;
 use Dirt\Tools\LocalTerminal;
 use Dirt\Tools\RemoteTerminal;
+use Dirt\Tools\RemoteFileSystem;
 use Dirt\Tools\GitBuilder;
 use Dirt\Tools\MySQLBuilder;
 
@@ -63,14 +64,7 @@ class StagingDeployer extends Deployer
         // Connect to server
         $this->output->write('Connecting to staging server... ');
 
-        $stagingConfig = [
-          'hostname' => $this->config->environments->staging->hostname,
-          'port'     => $this->config->environments->staging->port,
-          'keyfile'  => $this->config->environments->staging->keyfile,
-          'username' => $this->config->environments->staging->username
-        ];
-
-        $this->stagingTerminal = new RemoteTerminal($stagingConfig, $this->output);
+        $this->stagingTerminal = new RemoteTerminal($this->config->environments->staging, $this->output);
 
         $this->output->writeln('<info>OK</info>');
 
@@ -92,10 +86,7 @@ class StagingDeployer extends Deployer
           $this->output->writeln('<info>OK</info>');
         }
 
-        $mysql = new MySQLBuilder(
-          $this->config->environments->staging->mysql->username,
-          $this->config->environments->staging->mysql->password
-        );
+        $mysql = new MySQLBuilder($this->config->environments->staging->mysql);
 
         // Remove database
         $this->output->write('Removing database "' . $this->databaseCredentials['database'] . '"... ');
@@ -185,14 +176,7 @@ class StagingDeployer extends Deployer
         // Connect to server
         $this->output->write('Connecting to staging server... ');
 
-        $stagingConfig = [
-          'hostname' => $this->config->environments->staging->hostname,
-          'port'     => $this->config->environments->staging->port,
-          'keyfile'  => $this->config->environments->staging->keyfile,
-          'username' => $this->config->environments->staging->username
-        ];
-
-        $this->stagingTerminal = new RemoteTerminal($stagingConfig, $this->output);
+        $this->stagingTerminal = new RemoteTerminal($this->config->environments->staging, $this->output);
 
         $this->ssh = $this->stagingTerminal->getSSHConnection();
 
@@ -215,12 +199,11 @@ class StagingDeployer extends Deployer
         $git = new GitBuilder();
 
         $response = $this->stagingTerminal
-            ->startSession()
             ->ignoreError()
             ->add('cd /var/www/sites/' . $this->project->getStagingUrl(false))
             ->add($git->fetch('--all'))
             ->add($git->reset('--hard origin/master'))
-            ->executeSession();
+            ->execute();
 
         if (strpos($response, 'Not a git repository') !== FALSE) {
           $this->setupGitRepository();
@@ -245,13 +228,12 @@ class StagingDeployer extends Deployer
       $git = new GitBuilder();
 
       $this->stagingTerminal
-        ->startSession()
         ->ignoreError()
         ->add('cd /var/www/sites/' . $this->project->getStagingUrl(false))
         ->add('rm -rf public/')
         ->add($git->clone($this->project->getRepositoryUrl() . ' .'))
         ->add($git->checkout('staging'))
-        ->executeSession();
+        ->execute();
 
       $this->output->writeln('<info>OK</info>');
     }
@@ -266,19 +248,19 @@ class StagingDeployer extends Deployer
         );
 
         $this->output->writeln('<info>OK</info>');
-      } catch (\Exception $e) {
+      }
+      catch (\Exception $e) {
         $this->output->writeln('<error>Error: '. $e->getMessage() .'</error>');
-        exit(1);
+        throw new \RuntimeException('Error: '. $e->getMessage());
       }
     }
 
     private function allowWebServerAccessToSiteFiles() {
       $this->stagingTerminal
-        ->startSession()
         ->add('cd /var/www/sites/' . $this->project->getStagingUrl(false))
         ->add('sudo chgrp -R webdata .')
         ->add('sudo chmod -R g+w .')
-        ->executeSession();
+        ->execute();
     }
 
     /**
@@ -333,8 +315,11 @@ class StagingDeployer extends Deployer
         // Verify that database is set up
         $this->output->write('Checking if database has been configured... ');
 
-        // TODO this needs to be cleaned up...
-        $response = $this->stagingTerminal->ignoreError()->run("mysql -u". $this->config->environments->staging->mysql->username ." -p". $this->config->environments->staging->mysql->password ." -e \"SHOW DATABASES LIKE '". $this->databaseCredentials['database'] ."'\" | grep ". $this->databaseCredentials['database']);
+        $mysql = new MySQLBuilder($this->config->environments->staging->mysql);
+
+        $response = $this->stagingTerminal->ignoreError()->run(
+            $mysql->query("SHOW DATABASES LIKE '". $this->databaseCredentials['database'] ."'")
+            . "| grep ". $this->databaseCredentials['database']);
 
         if (strlen($response) == 0) {
             $this->output->writeln('<comment>Nope</comment>');
@@ -356,24 +341,17 @@ class StagingDeployer extends Deployer
     {
       $this->output->write("\t" . 'Configuring database account on staging server... ');
 
-      $mysql = new MySQLBuilder(
-        $this->config->environments->staging->mysql->username,
-        $this->config->environments->staging->mysql->password
-      );
+      $mysql = new MySQLBuilder($this->config->environments->staging->mysql);
 
       // Create database
-      $this->stagingTerminal->run($mysql->query("CREATE DATABASE ". $this->databaseCredentials['database'] .";"));
+      $this->stagingTerminal->run($mysql->query("CREATE DATABASE " . $this->databaseCredentials['database'] . ";"));
 
       // Create user
-      $this->stagingTerminal->run($mysql->query("GRANT ALL ON ". $this->databaseCredentials['database'] .".* TO '". $this->databaseCredentials['username'] ."'@'localhost' IDENTIFIED BY '". $this->databaseCredentials['password'] ."';"));
+      $this->stagingTerminal->run($mysql->query("GRANT ALL ON ". $this->databaseCredentials['database'] .".* TO '"
+        . $this->databaseCredentials['username'] ."'@'localhost' IDENTIFIED BY '"
+        . $this->databaseCredentials['password'] ."';"));
 
-        $response = $this->ssh->exec("mysql -u". $this->config->environments->staging->mysql->username ." -p". $this->config->environments->staging->mysql->password ." -e \"GRANT ALL ON ". $this->databaseCredentials['database'] .".* TO '". $this->databaseCredentials['username'] ."'@'localhost' IDENTIFIED BY '". $this->databaseCredentials['password'] ."';\"");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        }
-
-        $this->output->writeln('<info>OK</info>');
+      $this->output->writeln('<info>OK</info>');
     }
 
     private function importDevDatabase()
@@ -409,61 +387,27 @@ class StagingDeployer extends Deployer
 
         // Upload MySQL dump
         $this->output->write("\t" . 'Uploading database dump... ');
-        $sftp = new \Net_SFTP($this->config->environments->staging->hostname, $this->config->environments->staging->port);
-        $key = new \Crypt_RSA();
-        $key->loadKey(file_get_contents($this->config->environments->staging->keyfile));
-        if (!$sftp->login($this->config->environments->staging->username, $key)) {
-            $this->output->writeln('<error>Error: Authentication failed</error>');
-            exit(1);
-        } else {
-            $sftp->put('/tmp/dev_'. $fileHash .'_structure.sql', $this->project->getDirectory() . '/db/dev_structure.sql', NET_SFTP_LOCAL_FILE);
-            $sftp->put('/tmp/dev_'. $fileHash .'_content.sql', $this->project->getDirectory() . '/db/dev_content.sql', NET_SFTP_LOCAL_FILE);
-
-            $this->output->writeln('<info>OK</info>');
-        }
+        $sftp = new RemoteFileSystem($this->config->environments->staging);
+        $sftp->upload('/tmp/dev_'. $fileHash .'_structure.sql', $this->project->getDirectory() . '/db/dev_structure.sql');
+        $sftp->upload('/tmp/dev_'. $fileHash .'_content.sql', $this->project->getDirectory() . '/db/dev_content.sql');
+        $this->output->writeln('<info>OK</info>');
 
         // Migrate MySQL dump
         $this->output->write("\t" . 'Migrating database dump... ');
-        $response = $this->ssh->exec("sed -i 's/". $this->project->getDevUrl(false) ."/". $this->project->getStagingUrl(false) ."/g' /tmp/dev_". $fileHash ."_content.sql");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        } else {
-            $this->output->writeln('<info>OK</info>');
-        }
+        $this->stagingTerminal->run("sed -i 's/". $this->project->getDevUrl(false) ."/". $this->project->getStagingUrl(false) ."/g' /tmp/dev_". $fileHash ."_content.sql");
+        $this->output->writeln('<info>OK</info>');
 
         // Import MySQL dump
         $this->output->write("\t" . 'Importing database dump... ');
-        $response = $this->ssh->exec("mysql -u". $this->databaseCredentials['username'] ." -p". $this->databaseCredentials['password'] ." ". $this->databaseCredentials['database'] ." < /tmp/dev_". $fileHash ."_structure.sql");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        }
-
-        $response = $this->ssh->exec("mysql -u". $this->databaseCredentials['username'] ." -p". $this->databaseCredentials['password'] ." ". $this->databaseCredentials['database'] ." < /tmp/dev_". $fileHash ."_content.sql");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        }
-
+        $mysql = new MySQLBuilder($this->config->environments->staging->mysql);
+        $this->stagingTerminal->run($mysql->import("/tmp/dev_". $fileHash ."_structure.sql", $this->databaseCredentials['database']));
+        $this->stagingTerminal->run($mysql->import("/tmp/dev_". $fileHash ."_content.sql", $this->databaseCredentials['database']));
         $this->output->writeln('<info>OK</info>');
-
 
         // Clean up
         $this->output->write("\t" . 'Cleaning up... ');
-
-        $response = $this->ssh->exec("rm /tmp/dev_". $fileHash ."_structure.sql");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        }
-
-        $response = $this->ssh->exec("rm /tmp/dev_". $fileHash ."_content.sql");
-        if ($this->ssh->getExitStatus() != 0) {
-            $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
-            exit(1);
-        }
-
+        $this->stagingTerminal->run("rm /tmp/dev_". $fileHash ."_structure.sql");
+        $this->stagingTerminal->run("rm /tmp/dev_". $fileHash ."_content.sql");
         $this->output->writeln('<info>OK</info>');
     }
 }
