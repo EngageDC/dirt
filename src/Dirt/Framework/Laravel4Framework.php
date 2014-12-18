@@ -178,7 +178,7 @@ class Laravel4Framework extends Framework
     {
         // Define environments
         $validEnvironments = array(
-            'local' => strtolower()$project->getName()), // Hostname in vagrant is set to the simple project name
+            'local' => strtolower($project->getName()), // Hostname in vagrant is set to the simple project name
             'staging' => 'stage' // Staging server hostname
         );
 
