@@ -137,7 +137,7 @@ class StagingDeployer extends Deployer
         if (strpos($status, 'nothing to commit') === FALSE)
         {
           // Show diff
-          $this->output->writeln($git->ignoreError()->diff());
+          $this->output->writeln($terminal->ignoreError()->run($git->diff()));
 
           $message = $this->dialog->ask(
               $this->output,
@@ -387,7 +387,7 @@ class StagingDeployer extends Deployer
 
         // Upload MySQL dump
         $this->output->write("\t" . 'Uploading database dump... ');
-        $sftp = new RemoteFileSystem($this->config->environments->staging);
+        $sftp = new RemoteFileSystem($this->config->environments->staging, $this->output);
         $sftp->upload('/tmp/dev_'. $fileHash .'_structure.sql', $this->project->getDirectory() . '/db/dev_structure.sql');
         $sftp->upload('/tmp/dev_'. $fileHash .'_content.sql', $this->project->getDirectory() . '/db/dev_content.sql');
         $this->output->writeln('<info>OK</info>');
