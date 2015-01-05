@@ -206,7 +206,7 @@ class StagingDeployer extends Deployer
         }
 
         // Make sure staging is up to date
-        $process->setCommandLine('git fetch --all');
+        $process->setCommandLine('git fetch origin');
         if ($this->verbose) $this->output->write($process->getOutput());
         $process->run();
         if (!$process->isSuccessful()) {
