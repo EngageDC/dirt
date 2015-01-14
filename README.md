@@ -7,7 +7,7 @@ dirt is a slightly opinionated deployment and development workflow tool for gett
 
 dirt can assist you and your team with creating and configuring web projects as well as deploying them to staging and production environments. dirt also handles database dumping, allowing you to easily sync data between dev/staging/production environments.
 
-dirt is an essential part of our workflow here at [Engage](http://enga.ge) and has been in use and under development since 2012.
+dirt is an essential part of our workflow here at [Engage](http://engagedc.com) and has been in use and under development since 2012.
 
 ![dirt in action](https://engage-assets.s3.amazonaws.com/dirtgif.gif)
 
