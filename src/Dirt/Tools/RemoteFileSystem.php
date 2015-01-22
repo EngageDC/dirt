@@ -13,17 +13,17 @@ class RemoteFileSystem {
     public function __construct($config, $output) {
         $this->output = $output;
 
-        $this->ssh = new \Net_SFTP($config->hostname, $config->port);
+        $this->sftp = new \Net_SFTP($config->hostname, $config->port);
         $key = new \Crypt_RSA();
         $key->loadKey(file_get_contents($config->keyfile));
 
-        if (!$this->ssh->login($config->username, $key)) {
+        if (!$this->sftp->login($config->username, $key)) {
             $this->output->writeln('<error>Error: Authentication failed</error>');
             throw new \RuntimeException("Error: Authentication failed");
         }
     }
 
     public function upload($destination, $file) {
-        $sftp->put($destination, $file, NET_SFTP_LOCAL_FILE);
+        $this->sftp->put($destination, $file, NET_SFTP_LOCAL_FILE);
     }
 }

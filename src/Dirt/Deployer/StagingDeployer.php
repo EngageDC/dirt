@@ -12,7 +12,6 @@ use Dirt\Tools\MySQLBuilder;
 
 class StagingDeployer extends Deployer
 {
-    private $ssh;
     private $databaseCredentials;
     private $stagingTerminal;
 
@@ -76,7 +75,6 @@ class StagingDeployer extends Deployer
         // Remove site directory
         $this->output->write('Removing site directory... ');
         $siteDir = $this->project->getStagingUrl(false);
-
 
         if (strlen($siteDir) <= 0) { // We don't want to risk wiping the whole sites directory, do we?
           $this->output->writeln('<error>Error! Invalid site dir: '. $siteDir .'</error>');
@@ -177,8 +175,6 @@ class StagingDeployer extends Deployer
         $this->output->write('Connecting to staging server... ');
 
         $this->stagingTerminal = new RemoteTerminal($this->config->environments->staging, $this->output);
-
-        $this->ssh = $this->stagingTerminal->getSSHConnection();
 
         $this->output->writeln('<info>OK</info>');
 
