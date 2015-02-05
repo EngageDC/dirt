@@ -112,9 +112,9 @@ class Laravel4Framework extends Framework
         elseif ($environment == 'staging')
         {
             $ssh->exec('chmod -R 777 /var/www/sites/' . $project->getStagingUrl(false) . '/app/storage');
+            $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && composer install');
             $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && php artisan migrate --env=staging');
             $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && php artisan optimize');
-            $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && composer install');
         }
         elseif ($environment == 'production')
         {
