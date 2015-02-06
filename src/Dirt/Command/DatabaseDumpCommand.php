@@ -71,8 +71,9 @@ class DatabaseDumpCommand extends Command
         }
         elseif ($environmentArgument[0] == 'p')
         {
-            $output->writeln('<comment>Dumping from production is not implemented yet.</comment>');
-            exit(1);
+            $message = 'Dumping from production is not implemented yet.';
+            $output->writeln('<comment>'. $message .'</comment>');
+            throw new \RuntimeException($message);
         }
         else
         {
@@ -106,5 +107,5 @@ class DatabaseDumpCommand extends Command
         // Dump database
         $deployer->dumpDatabase($shouldImport);
     }
-    
+
 }
