@@ -18,7 +18,7 @@ class DirtApplication extends Application {
 ';
 
     private static $name = 'dirt [Done In Record Time]';
-    private static $version = '1.0.0';
+    private static $version = '1.1.0';
 
     public function __construct() {
 
