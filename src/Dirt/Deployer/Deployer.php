@@ -13,7 +13,7 @@ abstract class Deployer
     protected $verbose = false;
     protected $yes = false;
     protected $no = false;
-    
+
     public function setInput($input)
     {
         $this->input = $input;
@@ -72,7 +72,7 @@ abstract class Deployer
         if ($this->no) {
             return;
         }
-        
+
         if (!$this->yes) {
             if (file_exists($structureFile) || file_exists($contentFile)) {
                 if (!$this->dialog->askConfirmation(
@@ -177,7 +177,7 @@ abstract class Deployer
                 $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');
                 exit(1);
             }
-            
+
             $response = $devSSH->exec('mysql -u'. $devDatabaseCredentials['username'] .' -p'. $devDatabaseCredentials['password'] .' '. $devDatabaseCredentials['database'] .' < /var/www/site/db/'. $environment .'_content.sql');
             if ($devSSH->getExitStatus() != 0) {
                 $this->output->writeln('<error>Error! Unexpected response: '. trim($response) .'</error>');

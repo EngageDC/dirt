@@ -17,7 +17,7 @@ class CreateCommand extends Command
 {
     private $config;
     private $project;
-    
+
     private $input;
     private $output;
 
@@ -79,7 +79,7 @@ class CreateCommand extends Command
 
         // Validate framework
         $frameworkName = $input->getOption('framework');
-        
+
         if ($frameworkName) {
             $frameworkName = strtolower($frameworkName);
 
@@ -97,14 +97,14 @@ class CreateCommand extends Command
 
         // Perform project creation actions
         $output->writeln('Creating new project in ' . $this->project->getDirectory());
-        
+
         // Only create repository if skip-repository flag hasn't been set
         if (!$input->getOption('skip-repository')) {
             $this->createRepository();
         }
 
         $this->initializeProjectDirectory();
-        
+
         // Install framework if needed
         if ($this->project->getFramework() !== FALSE) {
             $this->output->writeln('Installing ' . $this->project->getFramework()->getName(false) . '...');
@@ -134,11 +134,12 @@ class CreateCommand extends Command
                 $process->run();
                 $this->output->write('.');
                 if (!$process->isSuccessful()) {
-                    $this->output->writeln('<error>Error: Could not run "'. $command .'", git returned: ' . $process->getErrorOutput() . '</error>');
-                    exit(1);
+                    $message = 'Error: Could not run "'. $command .'", git returned: ' . $process->getErrorOutput();
+                    $this->output->writeln('<error>'. $message . '</error>');
+                    throw new \RuntimeException($message);
                 }
             }
-            $this->output->writeln('<info>OK</info>');   
+            $this->output->writeln('<info>OK</info>');
         } else {
             // Just create the public directory
             mkdir($this->project->getDirectory() . '/public');
@@ -162,8 +163,9 @@ class CreateCommand extends Command
 
             $this->output->writeln('<info>OK</info>');
         } catch (\Exception $e) {
-            $this->output->writeln('<error>Error: '. $e->getMessage() .'</error>');
-            exit(1);
+            $message = 'Error: '. $e->getMessage();
+            $this->output->writeln('<error>'. $message .'</error>');
+            throw new \RuntimeException($message);
         }
     }
 
@@ -176,8 +178,9 @@ class CreateCommand extends Command
 
         // Create directory
         if (!@mkdir($this->project->getDirectory())) {
-            $this->output->writeln('<error>Error: Could not create directory</error>');
-            exit(1);
+            $message = 'Error: Could not create directory';
+            $this->output->writeln('<error>' . $message . '</error>');
+            throw new \RuntimeException($message);
         }
 
         // Add template files
@@ -190,7 +193,7 @@ class CreateCommand extends Command
 
         // Add Dirtfile
         $this->project->save();
-        
+
         // Initialize git for working directory
         $process = new Process(null, $this->project->getDirectory());
         $process->setTimeout(3600);
@@ -210,8 +213,9 @@ class CreateCommand extends Command
             $process->setCommandLine($command);
             $process->run();
             if (!$process->isSuccessful()) {
-                $this->output->writeln('<error>Error: Could not run "'. $command .'", git returned: ' . $process->getErrorOutput() . '</error>');
-                exit(1);
+                $message = 'Error: Could not run "'. $command .'", git returned: ' . $process->getErrorOutput();
+                $this->output->writeln('<error>'. $message . '</error>');
+                throw new \RuntimeException($message);
             }
         }
 
