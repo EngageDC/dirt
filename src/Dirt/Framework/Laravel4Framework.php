@@ -178,8 +178,8 @@ class Laravel4Framework extends Framework
     {
         // Define environments
         $validEnvironments = array(
-            'local' => strtolower($project->getName()), // Hostname in vagrant is set to the simple project name
-            'staging' => 'stage' // Staging server hostname
+            'local' => [strtolower($project->getName()), strtolower($project->getName()) . '.local'], // Hostname in vagrant is set to the simple project name
+            'staging' => ['stage'] // Staging server hostname
         );
 
         // Load config file
@@ -192,7 +192,7 @@ class Laravel4Framework extends Framework
                 $line = '';
 
                 foreach ($validEnvironments as $name => $host) {
-                    $line .= "\t" . "'". $name ."' => array('". $host ."')," . "\n";
+                    $line .= "\t" . "'". $name ."' => array('". implode("', '", $host) ."')," . "\n";
                 }
             }
         }
