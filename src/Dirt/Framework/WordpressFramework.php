@@ -96,6 +96,8 @@ class WordpressFramework extends Framework
         }
 
         $lineNo = 1;
+        $home_found = false;
+        $siteurl_found = false;
         foreach ($configLines as &$line) {
             if (strpos($line, "define('DB_NAME'") !== FALSE) {
                 $line = "define('DB_NAME', '". $databaseCredentials['database'] ."');";
@@ -141,7 +143,8 @@ class WordpressFramework extends Framework
             ' */',
             "define('WP_CACHE', ". (($environment == 'dev') ? 'false' : 'true') .");"
         );
-        if (isset($homeurl_found) && $homeurl_found) {
+
+        if (!$home_found || !$siteurl_found) {
             array_splice($configLines, $debugLineNo, 0, $extraLines);
         }
 
@@ -165,7 +168,6 @@ class WordpressFramework extends Framework
             for ($i = 0; $i < 8; $i++) {
                 $devConfig = preg_replace('/put your unique phrase here/', $this->generateWordPressToken(), $devConfig, 1);
             }
-
             file_put_contents($project->getDirectory() . $configDirectory . 'wp-config.php', $devConfig);
         }
         else
@@ -176,7 +178,6 @@ class WordpressFramework extends Framework
             $configContents = str_replace('"', '\"', $configContents); // Escape quotes
             $configContents = str_replace('`', '\\`', $configContents); // Escape backticks
             $configContents = str_replace('$', '\\$', $configContents); // Escape $
-            
             $response = $ssh->exec('echo -e "'. $configContents .'" > ' . $dir . $configDirectory . 'wp-config.php');
 
             if (strlen($response) != 0) {
