@@ -223,12 +223,12 @@ The only required parameter is the project name. A description and framework can
 
 The `--skip-repository` option allows you to skip creating a GitHub/GitLab repository for the project, this is usually if you want to use a different remote or prefer to work with it locally only for the time being.
 
-	$ create [-f|--framework="..."] [-d|--description="..."] [--skip-repository] name
+	$ dirt create [-f|--framework="..."] [-d|--description="..."] [--skip-repository] name
 
 ### Deployment
 dirt handles deployment to both the staging and production environment, the deployment process can be invoked by calling:
 
-	$ deploy [-u|--undeploy] [-v|--verbose] [-y|--yes] [-n|--no] staging|production
+	$ dirt deploy [-u|--undeploy] [-v|--verbose] [-y|--yes] [-n|--no] staging|production
 
 Deploying till staging will do the following things:
 * dirt will ensure that any local git changes will be added/committed/pushed (You will be prompted for a commit message if there is any changes)
