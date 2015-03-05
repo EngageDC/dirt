@@ -19,14 +19,26 @@ class UpdateCommand extends Command
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
-    {        
+    {
+        $basePath = dirname(__FILE__) . '/../../../';
+
         $output->writeln('Updating dirt... ');
         
-        $process = new Process('git fetch --all && git reset --hard origin/master', dirname(__FILE__) . '/../../../');
+        $process = new Process('git fetch --all && git reset --hard origin/master', $basePath);
         $process->setTimeout(3600);
         $process->run(function ($type, $buffer) use ($output) {
             $output->write($buffer);
         });
+
+        if (file_exists($basePath . 'team')) {
+            $output->writeln('Updating team configuration... ');
+            
+            $process = new Process('git fetch --all && git reset --hard origin/master', $basePath . 'team');
+            $process->setTimeout(3600);
+            $process->run(function ($type, $buffer) use ($output) {
+                $output->write($buffer);
+            });
+        }
     }
 
 }
