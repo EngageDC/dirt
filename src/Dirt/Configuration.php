@@ -30,7 +30,7 @@ class Configuration {
     {
         // Check if configuration file exists
         if (!$this->configurationExists()) {
-            throw new \RuntimeException('Local dirt configuration file not found, please run "dirt setup" first.');
+            throw new \RuntimeException('Local dirt configuration file not found. Please create one and put it here: ' . $this->localConfigFilename);
         }
 
         $localConfig = require($this->localConfigFilename);
