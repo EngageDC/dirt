@@ -95,6 +95,9 @@ class WordpressFramework extends Framework
                 break;
         }
 
+        $simpleProjectName = preg_replace("/[^a-z]/", '', strtolower($project->getName()));
+        $prefix = 'eng'. substr($simpleProjectName, 0, 3) . '_';
+
         $lineNo = 1;
         $home_found = false;
         $siteurl_found = false;
@@ -108,7 +111,7 @@ class WordpressFramework extends Framework
             } elseif (strpos($line, "define('DB_PASSWORD'") !== FALSE) {
                 $line = "define('DB_PASSWORD', '". $databaseCredentials['password'] ."');";
             } elseif (strpos($line, "\$table_prefix  =") !== FALSE) {
-                $line = "\$table_prefix  = 'eng". substr($project->getName(), 0, 3) ."_';";
+                $line = "\$table_prefix  = '". $prefix ."';";
             } elseif (strpos($line, "define('WP_DEBUG'") !== FALSE) {
                 $enableDebugging = (($environment == 'dev') ? 'true' : 'false');
                 $line = "define('WP_DEBUG', ". $enableDebugging .");";
