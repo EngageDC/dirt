@@ -31,8 +31,10 @@ class LocalTerminal {
             $message = 'Could not run "'. $this->process->getCommandLine()
             .'", command returned: ' . trim($this->process->getErrorOutput());
 
-            if($this->ignoreError) {
-                $this->output->writeln('<comment>Warning: '. $message .'</comment>');
+            if ($this->ignoreError) {
+                if ($output->isVerbose()) {
+                    $this->output->writeln('<comment>Warning: '. $message .'</comment>');
+                }
             }
             else {
                 $this->output->writeln('<error> Error: '. $message .'</error>');
