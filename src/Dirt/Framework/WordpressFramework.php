@@ -95,7 +95,7 @@ class WordpressFramework extends Framework
                 break;
         }
 
-        $simpleProjectName = preg_replace("/[^a-z]/", '', strtolower($project->getName()));
+        $simpleProjectName = preg_replace("/[^a-zA-Z]/", '', $project->getName());
         $prefix = 'eng'. substr($simpleProjectName, 0, 3) . '_';
 
         $lineNo = 1;
