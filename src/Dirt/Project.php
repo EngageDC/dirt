@@ -368,31 +368,41 @@ class Project {
     }
 
     /**
+     * Executes "vagrant ssh-config" and returns the output
+     * @return string "vagrant ssh-config" output for the project
+     */
+    public function getSSHConfig() {
+        $process = new Process('vagrant ssh-config', $this->getDirectory());
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException('Could not get dev SSH credentials, make sure local virtual machine is running by executing "vagrant up": ' . $process->getErrorOutput());
+        }
+
+        return $process->getOutput();
+    }
+
+    /**
      * Returns dev SSH credentials from local VM, using Vagrant
      * @return array
      */
-    public function getDevelopmentServer()
-    {
+    public function getDevelopmentServer() {
         $credentials = array();
 
-        $process = new Process('vagrant ssh-config', $this->getDirectory());
-        $process->run(function ($type, $buffer) use (&$credentials) {
+        $lines = explode(PHP_EOL, $this->getSSHConfig());
 
-            $lines = explode(PHP_EOL, $buffer);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line))
+                continue;
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line))
-                    continue;
+            // The key is the first word
+            list($key) = explode(' ', $line);
 
-                list($key, $value) = explode(' ', $line);
+            // Keep the remaining part of the line
+            $value = substr($line, strlen($key) + 1);
 
-                $credentials[$key] = trim($value, '"');
-            }
-        });
-
-        if (!$process->isSuccessful()) {
-            throw new \RuntimeException('Could not get dev SSH credentials, make sure local virtual machine is running by executing "vagrant up"');
+            $credentials[$key] = trim($value, '"');
         }
 
         return (object)array(
