@@ -40,7 +40,7 @@ class LocalTerminal {
             }
         }
 
-        $this->exitOnError = true;
+        $this->ignoreError = false;
         return $this->process->getOutput();
     }
 }
