@@ -32,7 +32,7 @@ class LocalTerminal {
             .'", command returned: ' . trim($this->process->getErrorOutput());
 
             if ($this->ignoreError) {
-                if ($output->isVerbose()) {
+                if ($this->output->isVerbose()) {
                     $this->output->writeln('<comment>Warning: '. $message .'</comment>');
                 }
             }

@@ -26,6 +26,10 @@ class Configuration {
         return file_exists($this->teamConfigFilename);
     }
 
+    /**
+     * Loads the configuration from disk
+     * @return Configuration the loaded configuration object
+     */
     public function load()
     {
         // Check if configuration file exists
@@ -50,6 +54,15 @@ class Configuration {
         $this->config = json_decode(json_encode($this->config));
 
         return $this;
+    }
+
+    /**
+     * A shortcut to get the configuration of a specific environment
+     * @param  string $name dev|staging|production
+     * @return Object
+     */
+    public function getEnvironment($name) {
+        return $this->config->environments->$name;
     }
 
     public function __get($varName)

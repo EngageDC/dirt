@@ -73,6 +73,14 @@ class Project {
     }
 
     /**
+     * Returns the Dirt configuration instance for the project
+     * @return Dirt\Configuration Dirt configuration instance
+     */
+    public function getConfig() {
+        return $this->config;
+    }
+
+    /**
      * Sets the Dirt configuration instance
      * @param Dirt\Configuration $config Dirt configuration instance
      */

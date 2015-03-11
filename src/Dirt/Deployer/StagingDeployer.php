@@ -52,7 +52,7 @@ class StagingDeployer extends Deployer
     }
 
     /**
-     * Removes all configuration, files and database credentials from the staging server
+     * Removes all configuration, files, and database credentials from the staging server
      */
     public function undeploy()
     {
@@ -323,8 +323,8 @@ class StagingDeployer extends Deployer
             // Configure database
             $this->configureStagingDatabase();
 
-            // Import the dev database
-            $this->importDevDatabase();
+            // Remind user to import the dev database
+            $this->output->writeln('If you want to transfer your database to staging, just run <comment>dirt transfer development staging</comment> after this.');
         } else {
             $this->output->writeln('<info>OK</info>');
         }
@@ -350,60 +350,4 @@ class StagingDeployer extends Deployer
       $this->output->writeln('<info>OK</info>');
     }
 
-    private function importDevDatabase()
-    {
-        // Ask for confirmation first
-        $this->output->writeln('');
-        if ($this->no) {
-            return;
-        }
-
-        if (!$this->yes) {
-            if (!$this->dialog->askConfirmation(
-                $this->output,
-                '<question>The staging database is empty, do you want to copy the dev database to staging?</question> ',
-                true
-            ))
-            {
-                return;
-            }
-        }
-
-        // Dump dev database
-        $devDeployer = new DevDeployer();
-        $devDeployer->setInput($this->input);
-        $devDeployer->setOutput($this->output);
-        $devDeployer->setDialog($this->dialog);
-        $devDeployer->setProject($this->project);
-        $devDeployer->setConfig($this->config);
-        $devDeployer->dumpDatabase();
-
-        // Create file hash to avoid collisions
-        $fileHash = sha1($this->project->getName() . time());
-
-        // Upload MySQL dump
-        $this->output->write("\t" . 'Uploading database dump... ');
-        $sftp = new RemoteFileSystem($this->config->environments->staging, $this->output);
-        $sftp->upload('/tmp/dev_'. $fileHash .'_structure.sql', $this->project->getDirectory() . '/db/dev_structure.sql');
-        $sftp->upload('/tmp/dev_'. $fileHash .'_content.sql', $this->project->getDirectory() . '/db/dev_content.sql');
-        $this->output->writeln('<info>OK</info>');
-
-        // Migrate MySQL dump
-        $this->output->write("\t" . 'Migrating database dump... ');
-        $this->stagingTerminal->run("sed -i 's/". $this->project->getDevUrl(false) ."/". $this->project->getStagingUrl(false) ."/g' /tmp/dev_". $fileHash ."_content.sql");
-        $this->output->writeln('<info>OK</info>');
-
-        // Import MySQL dump
-        $this->output->write("\t" . 'Importing database dump... ');
-        $mysql = new MySQLBuilder($this->config->environments->staging->mysql);
-        $this->stagingTerminal->run($mysql->import("/tmp/dev_". $fileHash ."_structure.sql", $this->databaseCredentials['database']));
-        $this->stagingTerminal->run($mysql->import("/tmp/dev_". $fileHash ."_content.sql", $this->databaseCredentials['database']));
-        $this->output->writeln('<info>OK</info>');
-
-        // Clean up
-        $this->output->write("\t" . 'Cleaning up... ');
-        $this->stagingTerminal->run("rm /tmp/dev_". $fileHash ."_structure.sql");
-        $this->stagingTerminal->run("rm /tmp/dev_". $fileHash ."_content.sql");
-        $this->output->writeln('<info>OK</info>');
-    }
 }
