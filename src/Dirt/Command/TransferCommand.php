@@ -59,18 +59,8 @@ class TransferCommand extends Command
         $source = Transfer::fromEnvironment($input->getArgument('source'), $project)->setOutput($output);
         $destination = Transfer::fromEnvironment($input->getArgument('destination'), $project)->setOutput($output);
 
-        // Show table with details
-        $table = new Table($output);
-        $table->getStyle()->setCellHeaderFormat('%s');
-        $table->setHeaders(['Source', 'Destination'])
-            ->setRows([
-                [
-                    $source->getEnvironmentColored(),
-                    $destination->getEnvironmentColored()
-                ]
-            ]
-        );
-        $table->render();
+        // Show details
+        $output->writeln('Transfer: ' . $source->getEnvironmentColored() . ' ⇾ ' . $destination->getEnvironmentColored());
 
         // Ask for confirmation since this could possibly be destructive
         if (!$dialog->askConfirmation(
