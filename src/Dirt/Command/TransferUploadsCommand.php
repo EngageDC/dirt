@@ -11,7 +11,7 @@ use Symfony\Component\Process\Process;
 use Dirt\Project;
 use Dirt\Transfer;
 
-class TransferCommand extends Command
+class TransferUploadsCommand extends Command
 {
     private $input;
     private $output;
@@ -28,8 +28,8 @@ class TransferCommand extends Command
     protected function configure()
     {
         $this
-            ->setName('transfers')
-            ->setDescription('Transfers a database dump from one environment to another')
+            ->setName('transfer:uploads')
+            ->setDescription('Transfers uploaded files from one environment to another')
             ->addArgument(
                 'source',
                 InputArgument::REQUIRED,
@@ -55,30 +55,46 @@ class TransferCommand extends Command
 
         $dialog = $this->getHelperSet()->get('dialog');
 
-        // Initialize transfer objects
-        $source = Transfer::fromEnvironment($input->getArgument('source'), $project)->setOutput($output);
-        $destination = Transfer::fromEnvironment($input->getArgument('destination'), $project)->setOutput($output);
+        // Check if uploads folder exists for project
+        if ($project->getUploadsFolder() === null) {
+            throw new \RuntimeException('This project does not have an uploads folder');
+        }
 
-        // Show details
-        $output->writeln('Transfer: ' . $source->getEnvironmentColored() . ' ⇾ ' . $destination->getEnvironmentColored());
+        // Initialize transfer objects
+        $source = Transfer::fromEnvironment($input->getArgument('source'), $project)
+            ->setOutput($output);
+
+        $destination = Transfer::fromEnvironment($input->getArgument('destination'), $project)
+            ->setOutput($output);
+
+        $output->writeln('     __________
+   /          /|
+ /__________/  |
+ |________ |   |
+ /_____  /||   |    Transfer uploaded files
+|".___."| ||   |    ' . $source->getEnvironmentColored() . ' ⇾ ' . $destination->getEnvironmentColored() . '
+|_______|/ |   |
+ || .___."||  /
+ ||_______|| /
+ |_________|/');
 
         // Ask for confirmation since this could possibly be destructive
         if (!$dialog->askConfirmation(
                 $output,
-                '<question>This will override any changes in the <fg=black;bg=cyan;options=bold>' . $destination->getEnvironment() . '</fg=black;bg=cyan;options=bold> database, are you sure that you want to proceed?</question> ',
+                '<question>This will overwrite any uploads in the <fg=black;bg=cyan;options=bold>' . $destination->getEnvironment() . '</fg=black;bg=cyan;options=bold> environment, are you sure that you want to proceed?</question> ',
                 false
             ))
         {
             return;
         }
 
-        // Dump the source database
-        $filename = $source->dumpDatabase();
+        // Dump the uploads and pack them into a local archive
+        $filename = $source->dumpUploads();
 
-        // Import the database dump
-        $destination->importDatabase($filename);
+        // Import the uploads to the source
+        $destination->importUploads($filename);
 
-        // Clean up locally
+        // Clean up local file
         @unlink($filename);
     }
 

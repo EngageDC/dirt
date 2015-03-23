@@ -163,4 +163,43 @@ class Transfer
         $this->output->writeln('<info>OK</info>');
     }
 
+    public function dumpUploads() {
+        // Create hash to avoid collisions
+        $fileHash = sha1($this->project->getName() . time());
+        $uploadsFolder = $this->project->getUploadsFolder();
+
+        $localFilename = sys_get_temp_dir() . '/' . $fileHash . '.tar.gz';
+        $remoteFilename = '/tmp/' . $fileHash . '.tar.gz';
+
+        // Connect to server
+        $this->output->write('Connecting to '. $this->environment .' server... ');
+
+        $credentials = null;
+        try {
+            $credentials = ($this->environment == 'dev') ? $this->project->getDevelopmentServer() : $this->project->getConfig()->getEnvironment($this->environment);
+        } catch (\Exception $e) {
+            $this->output->writeln('<error>Error: '. $e->getMessage() .'</error>');
+            exit(1);
+        }
+
+        $terminal = new RemoteTerminal($credentials, $this->output);
+        $this->output->writeln('<info>OK</info>');
+
+        $this->output->write('Creating uploads dump... ');
+        $remoteDir = ($environment == 'staging') ? ('/var/www/sites/' . $project->getStagingUrl(false)) : $project->getProductionDirectory();
+        $terminal->run('tar zcvf ' . $remoteFilename . ' ' . $remoteDir . '/' . $uploadsFolder);
+        $this->output->writeln('<info>OK</info>');
+
+        $this->output->write('Downloading database dump to local db folder... ');
+        $sftp = new RemoteFileSystem($credentials, $this->output);
+        $sftp->download($remoteFilename, $localFilename);
+        $this->output->writeln('<info>OK</info>');
+
+        $this->output->write('Cleaning up... ');
+        $terminal->run("rm " . $remoteFilename);
+        $this->output->writeln('<info>OK</info>');
+
+        return $localFilename;
+    }
+
 }

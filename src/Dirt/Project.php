@@ -422,6 +422,21 @@ class Project {
     }
 
     /**
+     * This will return the uploads folder as a relative path from the project root
+     * If the project does not have a uploads folder, it will return null
+     * @return string|null Path to uploads folder
+     */
+    public function getUploadsFolder() {
+        if ($this->getFramework()->getName() == 'WordPress') {
+            return 'wp-content/uploads';
+        } elseif ($this->getFramework()->getName() == 'Laravel 4' && file_exists($this->getDirectory() . '/app/storage/uploads')) {
+            return 'app/storage/uploads';
+        }
+
+        return null;
+    }
+
+    /**
      * Returns a JSON representation of the project
      * @return string
      */

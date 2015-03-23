@@ -136,7 +136,7 @@ class WordpressFramework extends Framework
             ' * WordPress Site URL.',
             ' *',
             ' * This is automatically configured by dirt depending on the environment.',
-            ' * Note that this overrides the URL configured in the database.',
+            ' * Note that this overwrites the URL configured in the database.',
             ' */',
             "define('WP_HOME', '". $url ."');",
             "define('WP_SITEURL', '". $url . (($configDirectory == '/') ? '/core' : '') . "');",

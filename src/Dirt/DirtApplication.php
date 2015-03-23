@@ -33,7 +33,8 @@ class DirtApplication extends Application {
             $container->get('Dirt\Command\CreateCommand'),
             $container->get('Dirt\Command\DeployCommand'),
             $container->get('Dirt\Command\ApplyCommand'),
-            $container->get('Dirt\Command\TransferCommand'),
+            $container->get('Dirt\Command\TransferDatabaseCommand'),
+            $container->get('Dirt\Command\TransferUploadsCommand'),
             $container->get('Dirt\Command\UpdateCommand')
         ));
     }
