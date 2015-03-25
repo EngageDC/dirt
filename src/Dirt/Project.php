@@ -428,12 +428,28 @@ class Project {
      */
     public function getUploadsFolder() {
         if ($this->getFramework()->getName() == 'WordPress') {
-            return 'wp-content/uploads';
+            return 'public/wp-content/uploads';
         } elseif ($this->getFramework()->getName() == 'Laravel 4' && file_exists($this->getDirectory() . '/app/storage/uploads')) {
             return 'app/storage/uploads';
         }
 
         return null;
+    }
+
+    /**
+     * Get the absolute folder on the server for the site on a given environment
+     */
+    public function getFolderForEnvironment($environment) {
+        switch ($environment) {
+            case 'staging':
+                return '/var/www/sites/' . $this->getStagingUrl(false);
+
+            case 'production':
+                return $this->getProductionDirectory();
+            
+            default:
+                throw new \RuntimeException('Unknown environment ' . $environment);
+        }
     }
 
     /**

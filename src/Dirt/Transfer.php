@@ -4,6 +4,7 @@ namespace Dirt;
 use Dirt\Configuration;
 use Dirt\Tools\RemoteTerminal;
 use Dirt\Tools\RemoteFileSystem;
+use Dirt\Tools\LocalTerminal;
 
 class Transfer
 {
@@ -169,35 +170,73 @@ class Transfer
         $uploadsFolder = $this->project->getUploadsFolder();
 
         $localFilename = sys_get_temp_dir() . '/' . $fileHash . '.tar.gz';
-        $remoteFilename = '/tmp/' . $fileHash . '.tar.gz';
 
-        // Connect to server
-        $this->output->write('Connecting to '. $this->environment .' server... ');
+        if ($this->environment == 'dev') {
+            $this->output->write('Creating uploads dump... ');
+            $terminal = new LocalTerminal($this->project->getDirectory(), $this->output);
+            $terminal->run('tar zcvf ' . $localFilename . ' ' . $uploadsFolder);
+            $this->output->writeln('<info>OK</info>');
+        } else {
+            $remoteFilename = '/tmp/' . $fileHash . '.tar.gz';
 
-        $credentials = null;
-        try {
-            $credentials = ($this->environment == 'dev') ? $this->project->getDevelopmentServer() : $this->project->getConfig()->getEnvironment($this->environment);
-        } catch (\Exception $e) {
-            $this->output->writeln('<error>Error: '. $e->getMessage() .'</error>');
-            exit(1);
+            // Connect to server
+            $this->output->write('Connecting to '. $this->environment .' server... ');
+            $credentials = $this->project->getConfig()->getEnvironment($this->environment);
+
+            $terminal = new RemoteTerminal($credentials, $this->output);
+            $this->output->writeln('<info>OK</info>');
+
+            $this->output->write('Creating uploads dump... ');
+            $terminal->run('cd ' . $this->project->getFolderForEnvironment($this->environment) . ' && tar zcvf ' . $remoteFilename . ' ' . $uploadsFolder);
+            $this->output->writeln('<info>OK</info>');
+
+            $this->output->write('Downloading files to local folder... ');
+            $sftp = new RemoteFileSystem($credentials, $this->output);
+            $sftp->download($remoteFilename, $localFilename);
+            $this->output->writeln('<info>OK</info>');
+
+            $this->output->write('Cleaning up on remote... ');
+            $terminal->run("rm " . $remoteFilename);
+            $this->output->writeln('<info>OK</info>');
         }
 
-        $terminal = new RemoteTerminal($credentials, $this->output);
-        $this->output->writeln('<info>OK</info>');
+        return $localFilename;
+    }
 
-        $this->output->write('Creating uploads dump... ');
-        $remoteDir = ($environment == 'staging') ? ('/var/www/sites/' . $project->getStagingUrl(false)) : $project->getProductionDirectory();
-        $terminal->run('tar zcvf ' . $remoteFilename . ' ' . $remoteDir . '/' . $uploadsFolder);
-        $this->output->writeln('<info>OK</info>');
+    public function importUploads($localFilename) {
+        if ($this->environment == 'dev') {
+            // Extract files
+            $this->output->write('Extracting files... ');
+            $terminal = new LocalTerminal($this->project->getDirectory(), $this->output);
+            $terminal->run('mv ' . $localFilename . ' ' . $this->project->getDirectory() . ' && tar zxvf ' . basename($localFilename));
+            $this->output->writeln('<info>OK</info>');
 
-        $this->output->write('Downloading database dump to local db folder... ');
-        $sftp = new RemoteFileSystem($credentials, $this->output);
-        $sftp->download($remoteFilename, $localFilename);
-        $this->output->writeln('<info>OK</info>');
+            $this->output->write('Applying permissions... ');
+            $terminal->run('chmod -R 777 ' . $this->project->getUploadsFolder());
+            $this->output->writeln('<info>OK</info>');
+        } else {
+            // Upload files
+            $credentials = $this->project->getConfig()->getEnvironment($this->environment);
+            
+            $this->output->write('Uploading files... ');
+            $sftp = new RemoteFileSystem($credentials, $this->output);
+            $sftp->upload($this->project->getFolderForEnvironment($this->environment) . '/' . basename($localFilename), $localFilename);
+            $this->output->writeln('<info>OK</info>');
 
-        $this->output->write('Cleaning up... ');
-        $terminal->run("rm " . $remoteFilename);
-        $this->output->writeln('<info>OK</info>');
+            // Extract files
+            $this->output->write('Extracting files... ');
+            $terminal = new RemoteTerminal($credentials, $this->output);
+            $terminal->run('cd ' . $this->project->getFolderForEnvironment($this->environment) . ' && tar zxvf ' . basename($localFilename));
+            $this->output->writeln('<info>OK</info>');
+
+            $this->output->write('Cleaning up on remote... ');
+            $terminal->run('cd ' . $this->project->getFolderForEnvironment($this->environment) . ' && rm ' . basename($localFilename));
+            $this->output->writeln('<info>OK</info>');
+
+            $this->output->write('Applying permissions... ');
+            $terminal->run('cd ' . $this->project->getFolderForEnvironment($this->environment) . ' && chmod -R 777 ' . $this->project->getUploadsFolder());
+            $this->output->writeln('<info>OK</info>');
+        }
 
         return $localFilename;
     }

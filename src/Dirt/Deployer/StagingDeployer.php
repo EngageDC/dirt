@@ -219,7 +219,7 @@ class StagingDeployer extends Deployer
     }
 
     private function setupGitRepository() {
-      $this->output->write('Setting up repository...');
+      $this->output->write('Setting up repository... ');
 
       $git = new GitBuilder();
 
@@ -324,7 +324,7 @@ class StagingDeployer extends Deployer
             $this->configureStagingDatabase();
 
             // Remind user to import the dev database
-            $this->output->writeln('If you want to transfer your database to staging, just run <comment>dirt transfer development staging</comment> after this.');
+            $this->output->writeln('If you want to transfer your database to staging, just run <comment>dirt transfer:db development staging</comment>.');
         } else {
             $this->output->writeln('<info>OK</info>');
         }
