@@ -73,6 +73,14 @@ class Project {
     }
 
     /**
+     * Returns the Dirt configuration instance for the project
+     * @return Dirt\Configuration Dirt configuration instance
+     */
+    public function getConfig() {
+        return $this->config;
+    }
+
+    /**
      * Sets the Dirt configuration instance
      * @param Dirt\Configuration $config Dirt configuration instance
      */
@@ -268,6 +276,28 @@ class Project {
     }
 
     /**
+     * Returns the correct HTTP url for the given environment
+     * @param  string $environment dev|staging|production
+     * @param  string $includeProtocol Whether the protocol (i.e. http://) should be included
+     * @return string url
+     */
+    public function urlForEnvironment($environment, $includeProtocol = true) {
+        switch ($environment[0]) {
+            case 'd':
+                return $this->getDevUrl($includeProtocol);
+
+            case 's':
+                return $this->getStagingUrl($includeProtocol);
+
+            case 'p':
+                return $this->getProductionUrl($includeProtocol);
+            
+            default:
+                throw new \RuntimeException('Unknown environment ' . $environment);
+        }
+    }
+
+    /**
      * Returns full path to local working directory
      * @return string
      */
@@ -368,31 +398,41 @@ class Project {
     }
 
     /**
+     * Executes "vagrant ssh-config" and returns the output
+     * @return string "vagrant ssh-config" output for the project
+     */
+    public function getSSHConfig() {
+        $process = new Process('vagrant ssh-config', $this->getDirectory());
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new \RuntimeException('Could not get dev SSH credentials, make sure local virtual machine is running by executing "vagrant up": ' . $process->getErrorOutput());
+        }
+
+        return $process->getOutput();
+    }
+
+    /**
      * Returns dev SSH credentials from local VM, using Vagrant
      * @return array
      */
-    public function getDevelopmentServer()
-    {
+    public function getDevelopmentServer() {
         $credentials = array();
 
-        $process = new Process('vagrant ssh-config', $this->getDirectory());
-        $process->run(function ($type, $buffer) use (&$credentials) {
+        $lines = explode(PHP_EOL, $this->getSSHConfig());
 
-            $lines = explode(PHP_EOL, $buffer);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (empty($line))
+                continue;
 
-            foreach ($lines as $line) {
-                $line = trim($line);
-                if (empty($line))
-                    continue;
+            // The key is the first word
+            list($key) = explode(' ', $line);
 
-                list($key, $value) = explode(' ', $line);
+            // Keep the remaining part of the line
+            $value = substr($line, strlen($key) + 1);
 
-                $credentials[$key] = trim($value, '"');
-            }
-        });
-
-        if (!$process->isSuccessful()) {
-            throw new \RuntimeException('Could not get dev SSH credentials, make sure local virtual machine is running by executing "vagrant up"');
+            $credentials[$key] = trim($value, '"');
         }
 
         return (object)array(
@@ -401,6 +441,37 @@ class Project {
             'keyfile' => $credentials['IdentityFile'],
             'username' => $credentials['User']
         );
+    }
+
+    /**
+     * This will return the uploads folder as a relative path from the project root
+     * If the project does not have a uploads folder, it will return null
+     * @return string|null Path to uploads folder
+     */
+    public function getUploadsFolder() {
+        if ($this->getFramework()->getName() == 'WordPress') {
+            return 'public/wp-content/uploads';
+        } elseif ($this->getFramework()->getName() == 'Laravel 4' && file_exists($this->getDirectory() . '/app/storage/uploads')) {
+            return 'app/storage/uploads';
+        }
+
+        return null;
+    }
+
+    /**
+     * Get the absolute folder on the server for the site on a given environment
+     */
+    public function getFolderForEnvironment($environment) {
+        switch ($environment) {
+            case 'staging':
+                return '/var/www/sites/' . $this->getStagingUrl(false);
+
+            case 'production':
+                return $this->getProductionDirectory();
+            
+            default:
+                throw new \RuntimeException('Unknown environment ' . $environment);
+        }
     }
 
     /**

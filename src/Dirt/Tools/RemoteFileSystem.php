@@ -23,7 +23,22 @@ class RemoteFileSystem {
         }
     }
 
+    /**
+     * Uploads a file to the remote server with the given $destination
+     * @param  string $destination Full path and filename of remote file
+     * @param  string $file        Full path and filename of local file
+     */
     public function upload($destination, $file) {
         $this->sftp->put($destination, $file, NET_SFTP_LOCAL_FILE);
     }
+
+    /**
+     * Downloads a file from the remote server from the given $destination
+     * @param  string $destination Full path and filename of remote file
+     * @param  string $file        Full path and filename of local file
+     */
+    public function download($destination, $file) {
+        $this->sftp->get($destination, $file);
+    }
+
 }

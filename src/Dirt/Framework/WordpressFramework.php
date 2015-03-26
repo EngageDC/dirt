@@ -45,7 +45,8 @@ class WordpressFramework extends Framework
             '!wp-content/themes/',
             '*.log',
             'sitemap.xml',
-            'sitemap.xml.gz'
+            'sitemap.xml.gz',
+            'public/wp-content/uploads/*'
         );
         file_put_contents($project->getDirectory() . '/public/.gitignore', implode(PHP_EOL, $gitignoreContents));
     }
@@ -77,23 +78,7 @@ class WordpressFramework extends Framework
         $configLines = explode("\n", $sourceConfig);
 
         // Inject extra configuration lines after the WP_DEBUG line
-        $url = '';
-        switch ($environment) {
-            case 'dev':
-                $url = $project->getDevUrl();
-                break;
-
-            case 'staging':
-                $url = $project->getStagingUrl();
-                break;
-
-            case 'production':
-                $url = $project->getProductionUrl();
-                break;
-            
-            default:
-                break;
-        }
+        $url = $project->urlForEnvironment($environment);
 
         $simpleProjectName = preg_replace("/[^a-zA-Z]/", '', $project->getName());
         $prefix = 'eng'. substr($simpleProjectName, 0, 3) . '_';
@@ -136,7 +121,7 @@ class WordpressFramework extends Framework
             ' * WordPress Site URL.',
             ' *',
             ' * This is automatically configured by dirt depending on the environment.',
-            ' * Note that this overrides the URL configured in the database.',
+            ' * Note that this overwrites the URL configured in the database.',
             ' */',
             "define('WP_HOME', '". $url ."');",
             "define('WP_SITEURL', '". $url . (($configDirectory == '/') ? '/core' : '') . "');",

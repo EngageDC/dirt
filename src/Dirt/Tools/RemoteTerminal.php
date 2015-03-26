@@ -65,8 +65,10 @@ class RemoteTerminal {
         $response = $this->ssh->exec($command);
 
         if ($this->ssh->getExitStatus() != 0) {
-            if($this->ignoreError) {
-                $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
+            if ($this->ignoreError) {
+                if ($this->output->isVerbose()) {
+                    $this->output->writeln('<comment>Warning! Unexpected response: '. trim($response) .'</comment>');
+                }
             }
             else {
                 $message = 'Error! Unexpected response: '. trim($response);
