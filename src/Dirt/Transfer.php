@@ -124,6 +124,51 @@ class Transfer
         return $localFilename;
     }
 
+    public function migrateDatabase($filename, $source) {
+        $this->output->write('Migrating database... ');
+
+        $fromUrl = $this->getProject()->urlForEnvironment($source->getEnvironment(), false);
+        $toUrl = $this->getProject()->urlForEnvironment($this->getEnvironment(), false);
+
+        // We currently only have a serfix binary of OS X
+        $system = $this->getSystem();
+        if ($system != 'macosx') {
+            $this->output->writeln('<error>Error: Database migrations is currently only supported on OS X, sorry.</error>');
+            return;
+        }
+
+        $serfixBinary = dirname(__FILE__) . '/../../bin/' . $system . '/serfix';
+
+        // Do find and replace and run serfix (https://github.com/astockwell/serfix) on the file
+        // to correctly migrate any PHP serialization objects
+        $terminal = new LocalTerminal($this->project->getDirectory(), $this->output);
+        $terminal->run('sed -i "" "s/' . $fromUrl . '/' . $toUrl . '/g" ' . $filename);
+        $terminal->run($serfixBinary . ' ' . $filename);
+
+        $this->output->writeln('<info>OK</info>');
+    }
+
+    /**
+     * Get the operating system for the current platform.
+     * Inspired by Laravel Cashier
+     * https://github.com/laravel/cashier/blob/4.0/src/Laravel/Cashier/Invoice.php
+     *
+     * @return string
+     */
+    protected function getSystem()
+    {
+        $uname = strtolower(php_uname());
+        if (strpos($uname, 'darwin') !== false) {
+            return 'macosx';
+        } elseif (strpos($uname, 'win') !== false) {
+            return 'windows';
+        } elseif (strpos($uname, 'linux') !== false) {
+            return PHP_INT_SIZE === 4 ? 'linux-i686' : 'linux-x86_64';
+        } else {
+            throw new \RuntimeException('Unknown operating system.');
+        }
+    }
+
     public function importDatabase($localFilename) {    
         // Create hash to avoid collisions
         $fileHash = sha1($this->project->getName() . time());
@@ -214,6 +259,8 @@ class Transfer
             $this->output->write('Applying permissions... ');
             $terminal->run('chmod -R 777 ' . $this->project->getUploadsFolder());
             $this->output->writeln('<info>OK</info>');
+
+            return $this->project->getDirectory() . '/' . basename($localFilename);
         } else {
             // Upload files
             $credentials = $this->project->getConfig()->getEnvironment($this->environment);

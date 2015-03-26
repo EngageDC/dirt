@@ -276,6 +276,28 @@ class Project {
     }
 
     /**
+     * Returns the correct HTTP url for the given environment
+     * @param  string $environment dev|staging|production
+     * @param  string $includeProtocol Whether the protocol (i.e. http://) should be included
+     * @return string url
+     */
+    public function urlForEnvironment($environment, $includeProtocol = true) {
+        switch ($environment[0]) {
+            case 'd':
+                return $this->getDevUrl($includeProtocol);
+
+            case 's':
+                return $this->getStagingUrl($includeProtocol);
+
+            case 'p':
+                return $this->getProductionUrl($includeProtocol);
+            
+            default:
+                throw new \RuntimeException('Unknown environment ' . $environment);
+        }
+    }
+
+    /**
      * Returns full path to local working directory
      * @return string
      */

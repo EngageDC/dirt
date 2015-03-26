@@ -92,7 +92,7 @@ class TransferUploadsCommand extends Command
         $filename = $source->dumpUploads();
 
         // Import the uploads to the source
-        $destination->importUploads($filename);
+        $filename = $destination->importUploads($filename);
 
         // Clean up local file
         @unlink($filename);

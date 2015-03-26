@@ -83,10 +83,9 @@ class TransferDatabaseCommand extends Command
             return;
         }
 
-        // Dump the source database
+        // Dump, migrate and import database
         $filename = $source->dumpDatabase();
-
-        // Import the database dump
+        $destination->migrateDatabase($filename, $source);
         $destination->importDatabase($filename);
 
         // Clean up locally
