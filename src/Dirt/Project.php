@@ -453,6 +453,8 @@ class Project {
             return 'public/wp-content/uploads';
         } elseif ($this->getFramework()->getName() == 'Laravel 4' && file_exists($this->getDirectory() . '/app/storage/uploads')) {
             return 'app/storage/uploads';
+        } elseif ($this->getFramework()->getName() == 'Laravel 5' && file_exists($this->getDirectory() . '/storage/uploads')) {
+            return 'storage/uploads';
         }
 
         return null;
