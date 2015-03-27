@@ -40,7 +40,7 @@ class Laravel5Framework extends Framework
         $this->extractArchive($filename, $project->getDirectory(), $progressCallback);
 
         // Remove README file
-        unlink($project->getDirectory() . '/public/README.md');
+        unlink($project->getDirectory() . '/public/readme.md');
 
         // Get array of all source files
         $sourceDir = $project->getDirectory() . '/public/';
@@ -73,13 +73,6 @@ class Laravel5Framework extends Framework
         }
         rmdir($project->getDirectory() . '/public/public');
 
-        // Create config directory for each environment
-        $this->createDatabaseConfig($project->getDirectory(), $project->getDatabaseCredentials('dev'), 'local');
-        $this->createDatabaseConfig($project->getDirectory(), $project->getDatabaseCredentials('staging'), 'staging');
-
-        // Add environments to start.php
-        $this->updateEnvironmentDetection($project);
-
         // Merge Laravel gitignore file with gitignore template
         $originalGitignore = file_get_contents($project->getDirectory() . '/.gitignore');
 
@@ -106,12 +99,12 @@ class Laravel5Framework extends Framework
     public function configureEnvironment($environment, $project, $ssh = NULL)
     {
         if ($environment == 'dev') {
-            $process = new Process('chmod -R 777 app/storage', $project->getDirectory());
+            $process = new Process('chmod -R 777 storage', $project->getDirectory());
             $process->run();
         }
         elseif ($environment == 'staging')
         {
-            $ssh->exec('chmod -R 777 /var/www/sites/' . $project->getStagingUrl(false) . '/app/storage');
+            $ssh->exec('chmod -R 777 /var/www/sites/' . $project->getStagingUrl(false) . '/storage');
             $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && composer install');
             $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && php artisan migrate --env=staging');
             $ssh->exec('cd /var/www/sites/' . $project->getStagingUrl(false) . '/ && php artisan optimize');
@@ -122,83 +115,8 @@ class Laravel5Framework extends Framework
             $ssh->exec('cd ' . $project->getProductionDirectory() . ' && ln -sf public html');
 
             // Update permissions
-            $ssh->exec('chmod -R 777 ' . $project->getProductionDirectory() . '/app/storage');
+            $ssh->exec('chmod -R 777 ' . $project->getProductionDirectory() . '/storage');
         }
     }
 
-    private function createDatabaseConfig($directory, $databaseCredentials, $environment)
-    {
-        // Only continue if we are in an environment that supports database handling
-        if ($environment != 'local' && $environment != 'staging')
-            return;
-
-        // Define config directory
-        $environmentDirectory = $directory . '/app/config/' . $environment;
-
-        // Create config directory
-        if (!file_exists($environmentDirectory))
-            mkdir($environmentDirectory);
-
-        // Copy default database config over
-        copy($directory . '/app/config/database.php', $environmentDirectory . '/database.php');
-
-        // Load config file
-        $sourceConfig = file_get_contents($environmentDirectory . '/database.php');
-        $configLines = explode("\n", $sourceConfig);
-
-        $isInMySQLSection = false;
-        foreach ($configLines as &$line) {
-            if (strpos($line, "'driver'") !== FALSE && strpos($line, "'mysql'") !== FALSE) {
-                $isInMySQLSection = true;
-            }
-            if (strpos($line, "'driver'") !== FALSE && strpos($line, "'pgsql'") !== FALSE) {
-                $isInMySQLSection = false;
-            }
-
-            if ($isInMySQLSection)
-            {
-                if (preg_match("/'(.*)'\s+=>\s+('.*',)$/i", $line, $match)) {
-                    switch ($match[1]) {
-                        case 'username':
-                        case 'database':
-                        case 'password':
-                            $line = str_replace($match[2], "'" . $databaseCredentials[$match[1]] . "',", $line);
-                            break;
-                    }
-                }
-            }
-        }
-
-        // Save config file
-        $finalConfig = implode("\n", $configLines);
-        file_put_contents($environmentDirectory . '/database.php', $finalConfig);
-    }
-
-    private function updateEnvironmentDetection($project)
-    {
-        // Define environments
-        $validEnvironments = array(
-            'local' => [strtolower($project->getName()), strtolower($project->getName()) . '.local'], // Hostname in vagrant is set to the simple project name
-            'staging' => ['stage'] // Staging server hostname
-        );
-
-        // Load config file
-        $sourceConfig = file_get_contents($project->getDirectory() . '/bootstrap/start.php');
-        $configLines = explode("\n", $sourceConfig);
-
-        $isInMySQLSection = false;
-        foreach ($configLines as &$line) {
-            if (strpos($line, "homestead") !== FALSE) {
-                $line = '';
-
-                foreach ($validEnvironments as $name => $host) {
-                    $line .= "\t" . "'". $name ."' => array('". implode("', '", $host) ."')," . "\n";
-                }
-            }
-        }
-
-        // Save config file
-        $finalConfig = implode("\n", $configLines);
-        file_put_contents($project->getDirectory() . '/bootstrap/start.php', $finalConfig);
-    }
 }
