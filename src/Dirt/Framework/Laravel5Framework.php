@@ -5,7 +5,7 @@ use Symfony\Component\Process\Process;
 use Dirt\Configuration;
 use Dirt\TemplateHandler;
 
-class Laravel4Framework extends Framework
+class Laravel5Framework extends Framework
 {
 	/**
 	 * Full name of the Framework
@@ -13,7 +13,7 @@ class Laravel4Framework extends Framework
 	 */
     public function getName()
     {
-    	return 'Laravel 4';
+    	return 'Laravel 5';
     }
 
     /**
@@ -23,7 +23,7 @@ class Laravel4Framework extends Framework
      */
     public function getShortcuts()
     {
-    	return array('laravel4', 'l4');
+    	return array('laravel5', 'l5', 'laravel');
     }
 
     /**
@@ -34,7 +34,7 @@ class Laravel4Framework extends Framework
     public function install($project, $progressCallback = null)
     {
         // Download latest version
-        $filename = $this->downloadFile('https://github.com/laravel/laravel/archive/v4.2.11.zip', $project->getDirectory(), $progressCallback);
+        $filename = $this->downloadFile('https://github.com/laravel/laravel/archive/master.zip', $project->getDirectory(), $progressCallback);
 
         // Extract to location
         $this->extractArchive($filename, $project->getDirectory(), $progressCallback);

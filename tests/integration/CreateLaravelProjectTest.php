@@ -47,7 +47,7 @@ class CreateLaravelProjectTest extends CreateProjectTest
 				if ($line == '));') {
 					break;
 				} else {
-					$this->assertTrue($line == "'local' => array('Integration-Test-Project')," || $line == "'staging' => array('stage'),", 'Found local and staging section');
+					$this->assertTrue($line == "'local' => array('integration-test-project', 'integration-test-project.local')," || $line == "'staging' => array('stage'),", 'Found local and staging section');
 				}
 			}
 		}

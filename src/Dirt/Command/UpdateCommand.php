@@ -23,8 +23,14 @@ class UpdateCommand extends Command
         $basePath = dirname(__FILE__) . '/../../../';
 
         $output->writeln('Updating dirt... ');
-        
         $process = new Process('git fetch --all && git reset --hard origin/master', $basePath);
+        $process->setTimeout(3600);
+        $process->run(function ($type, $buffer) use ($output) {
+            $output->write($buffer);
+        });
+
+        $output->writeln('Updating dependencies... ');
+        $process = new Process('composer install', $basePath);
         $process->setTimeout(3600);
         $process->run(function ($type, $buffer) use ($output) {
             $output->write($buffer);

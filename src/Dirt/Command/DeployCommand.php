@@ -40,12 +40,6 @@ class DeployCommand extends Command
                 'Completely removes the site from the remote server'
             )
             ->addOption(
-                'verbose',
-                'v',
-                InputOption::VALUE_NONE,
-                'Be verbose'
-            )
-            ->addOption(
                 'yes',
                 'y',
                 InputOption::VALUE_NONE,
