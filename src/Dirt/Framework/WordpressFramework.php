@@ -84,6 +84,7 @@ class WordpressFramework extends Framework
         $prefix = 'eng'. substr($simpleProjectName, 0, 3) . '_';
 
         $lineNo = 1;
+        $debugLineNo = 2;
         $home_found = false;
         $siteurl_found = false;
         foreach ($configLines as &$line) {
