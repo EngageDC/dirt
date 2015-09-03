@@ -12,6 +12,7 @@ use Dirt\Framework\Framework;
 use Dirt\Deployer\Deployer;
 use Dirt\Deployer\StagingDeployer;
 use Dirt\Deployer\ProductionDeployer;
+use Dirt\Deployer\WPEngineDeployer;
 
 class DeployCommand extends Command
 {
@@ -74,6 +75,10 @@ class DeployCommand extends Command
         {
             $deployer = new StagingDeployer();
         }
+        elseif ($environmentArgument[0] == 'w')
+        {
+            $deployer = new WPEngineDeployer();
+        }
         elseif ($environmentArgument[0] == 'p')
         {
             if (!$input->getOption('no') && ($input->getOption('yes') || $dialog->askConfirmation(
@@ -91,7 +96,7 @@ class DeployCommand extends Command
         }
         else
         {
-            throw new \InvalidArgumentException('Invalid environment, valid environments are staging/stage/s or production/prod/p');
+            throw new \InvalidArgumentException('Invalid environment, valid environments are staging/stage/s, production/prod/p, wpengine/w');
         }
 
         // Start deployer

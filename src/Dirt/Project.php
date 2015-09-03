@@ -25,6 +25,8 @@ class Project {
 
     private $config = null;
 
+    private $wpengine;
+
     public function generateProperties() {
         // Generate ip address if necessary
         if (is_null($this->ipAddress)) {
@@ -67,7 +69,10 @@ class Project {
             $project->setFramework(Framework::fromName($projectData->framework));
         }
 
-        $project->parseGitConfig();
+        if (!empty($projectData->wpengine)) {
+            $project->wpengine = $projectData->wpengine;
+        }
+        
 
         return $project;
     }
@@ -165,6 +170,16 @@ class Project {
             $this->setRepositoryUrl($config['remote origin']['url']);
         }
     }
+
+    public function setWpConfig($wp_config) {
+        $this->wpengine = $wp_config;
+    }
+
+    public function getWpConfig() {
+       return $this->wpengine;
+    }
+
+
 
     /**
      * Return's the project repository url
@@ -500,6 +515,12 @@ class Project {
             )
         );
 
+        if (!empty($this->wpengine)) {
+            $projectData['wpengine'] = array();
+            foreach ($this->wpengine as $key=>$value) {
+                $projectData['wpengine'][$key] = $value;
+            }
+        }
         return json_encode($projectData, JSON_PRETTY_PRINT);    
     }
 
@@ -507,7 +528,8 @@ class Project {
      * Save Dirtfile.json for the project
      */
     public function save()
-    {
+    {   
+        var_dump($this);
         file_put_contents($this->getDirectory() . '/Dirtfile.json', $this->asJson());
     }
 
