@@ -98,7 +98,7 @@ class StagingDeployer extends Deployer
 
         // Test config
         $this->output->write('Testing vhost config syntax... ');
-        $response = $this->stagingTerminal->ignoreError()->run('sudo /etc/init.d/httpd configtest');
+        $response = $this->stagingTerminal->ignoreError()->run('sudo apachectl configtest');
 
         if (strpos($response, 'No such file or directory') === False) {
           $this->output->writeln('<info>OK</info>');
@@ -109,7 +109,7 @@ class StagingDeployer extends Deployer
 
         // Restart apache
         $this->output->write('Restarting httpd... ');
-        $this->stagingTerminal->run('sudo /etc/init.d/httpd graceful');
+        $this->stagingTerminal->run('sudo apachectl graceful');
         $this->output->writeln('<info>OK</info>');
     }
 
@@ -292,12 +292,12 @@ class StagingDeployer extends Deployer
 
         // Test config
         $this->output->write("\t" . 'Testing vhost config syntax... ');
-        $this->stagingTerminal->run('sudo /etc/init.d/httpd configtest');
+        $this->stagingTerminal->run('sudo apachectl configtest');
         $this->output->writeln('<info>OK</info>');
 
         // Restart apache
         $this->output->write("\t" . 'Restarting httpd... ');
-        $this->stagingTerminal->run('sudo /etc/init.d/httpd graceful');
+        $this->stagingTerminal->run('sudo apachectl graceful');
         $this->output->writeln('<info>OK</info>');
     }
 
@@ -316,7 +316,7 @@ class StagingDeployer extends Deployer
         $response = $this->stagingTerminal->ignoreError()->run(
             $mysql->query("SHOW DATABASES LIKE '". $this->databaseCredentials['database'] ."'")
             . "| grep ". $this->databaseCredentials['database']);
-
+        $response = trim(str_replace('Warning: Using a password on the command line interface can be insecure.','',$response));
         if (strlen($response) == 0) {
             $this->output->writeln('<comment>Nope</comment>');
 

@@ -73,6 +73,7 @@ class Project {
             $project->wpengine = $projectData->wpengine;
         }
         
+        $project->parseGitConfig(); 
 
         return $project;
     }
