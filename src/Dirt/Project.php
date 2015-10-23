@@ -530,7 +530,6 @@ class Project {
      */
     public function save()
     {   
-        var_dump($this);
         file_put_contents($this->getDirectory() . '/Dirtfile.json', $this->asJson());
     }
 
