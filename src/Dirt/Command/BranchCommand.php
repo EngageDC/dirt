@@ -33,6 +33,8 @@ class BranchCommand extends Command
     
     private $git;
     
+    private $dialog;
+    
     /**
     * @var string
     **/
@@ -70,10 +72,14 @@ class BranchCommand extends Command
         $this->output = $output;
         $this->terminal = new LocalTerminal('1', $this->output);
         $this->git = new GitBuilder();
-        
-        
-        $this->output->write('Checking if branch already exists...');
+        $this->dialog = $this->getHelperSet()->get('dialog');
+               
+        $this->output->write('Checking if branch already exists locally...');
         $this->checkForDuplicate();
+        
+                
+        $this->output->write('Checking if branch already exists in repository...');
+        $this->checkForRemoteDuplicate();
         
         $output->write('Creating new branch locally... ');
         $this->createLocal();
@@ -106,14 +112,63 @@ class BranchCommand extends Command
         
         if (strpos($branches, $this->branch_name) !== false ) {
             $this->output->write(PHP_EOL);
-            $this->output->writeln('<error>A branch named ' . $this->branch_name . ' already exists.</error>');
-            exit();
+            $this->output->writeln('<comment>A branch named ' . $this->branch_name . ' already exists.</comment>');
+            
+            if ($this->dialog->askConfirmation($this->output, '<question>Do you want to synchonize with the remote branch ' . $this->branch_name . '?</question>', true)) {
+                
+                $this->output->write('Pulling remote branch ' . $this->branch_name . '...');
+                $this->terminal->run($this->git->checkout($this->branch_name));
+                $this->output->write('<info>Ok</info>');
+                
+                $this->output->write(PHP_EOL);
+                
+                $this->output->writeln('<comment>You are now working on branch '. $this->branch_name . '.');
+                exit();
+            } else {
+                exit();
+            }
+
         }
         
         
         $this->output->write('<info>Ok</info>');
         $this->output->write(PHP_EOL);
         
+        
+    }
+    
+    protected function checkForRemoteDuplicate() {
+        
+
+        $branches = $this->terminal->run($this->git->branch('-r'));
+        
+        
+        //The branch already exists remotely.
+        if (strpos($branches, $this->branch_name) !== false ) {
+            
+            $dialog = $this->getHelperSet()->get('dialog');
+            
+            $this->output->write(PHP_EOL);
+            $this->output->writeln('<comment>A branch named ' . $this->branch_name . ' already exists.</comment>');
+            
+            if ($this->dialog->askConfirmation($this->output, '<question>Do you want to pull branch ' . $this->branch_name . '?</question>', true)) {
+                
+                $this->output->write('Pulling remote branch ' . $this->branch_name . '...');
+                $this->terminal->run($this->git->checkout($this->branch_name));
+                $this->output->write('<info>Ok</info>');
+                
+                $this->output->write(PHP_EOL);
+                
+                $this->output->writeln('<comment>You are now working on branch '. $this->branch_name . '.');
+                exit();
+            } else {
+                exit();
+            }
+        }
+        
+        //No remote branch. Clear to proceed.
+        $this->output->write('<info>Ok</info>');
+        $this->output->write(PHP_EOL);
         
     }
     
@@ -143,7 +198,7 @@ class BranchCommand extends Command
     
     protected function checkOutBranch() {
         
-        $terminal->run($git->checkout($this->branch_name));
+        $this->terminal->run($this->git->checkout($this->branch_name));
         $this->output->write('<info>Ok</info>');
         $this->output->write(PHP_EOL);
         
