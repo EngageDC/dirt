@@ -13,6 +13,7 @@ use Dirt\Deployer\Deployer;
 use Dirt\Deployer\StagingDeployer;
 use Dirt\Deployer\ProductionDeployer;
 use Dirt\Deployer\WPEngineDeployer;
+use Dirt\Deployer\BranchDeployer;
 
 class DeployCommand extends Command
 {
@@ -32,7 +33,7 @@ class DeployCommand extends Command
             ->addArgument(
                 'environment',
                 InputArgument::REQUIRED,
-                'staging/stage/s or production/prod/p'
+                'staging/stage/s or production/prod/p or branch/b'
             )
             ->addOption(
                 'undeploy',
@@ -79,6 +80,10 @@ class DeployCommand extends Command
         {
             $deployer = new WPEngineDeployer();
         }
+        elseif ($environmentArgument[0] == 'b') 
+        {
+            $deployer = new BranchDeployer();
+        }
         elseif ($environmentArgument[0] == 'p')
         {
             if (!$input->getOption('no') && ($input->getOption('yes') || $dialog->askConfirmation(
@@ -96,7 +101,7 @@ class DeployCommand extends Command
         }
         else
         {
-            throw new \InvalidArgumentException('Invalid environment, valid environments are staging/stage/s, production/prod/p, wpengine/w');
+            throw new \InvalidArgumentException('Invalid environment, valid environments are staging/stage/s, production/prod/p, branch/b, wpengine/w');
         }
 
         // Start deployer

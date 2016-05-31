@@ -45,4 +45,5 @@ class LocalTerminal {
         $this->ignoreError = false;
         return $this->process->getOutput();
     }
+    
 }
