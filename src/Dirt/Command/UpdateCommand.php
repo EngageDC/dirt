@@ -22,6 +22,7 @@ class UpdateCommand extends Command
     {
         $basePath = dirname(__FILE__) . '/../../../';
 
+
         $output->writeln('Updating dirt... ');
         $process = new Process('git fetch --all && git reset --hard origin/master', $basePath);
         $process->setTimeout(3600);
@@ -38,13 +39,30 @@ class UpdateCommand extends Command
 
         if (file_exists($basePath . 'team')) {
             $output->writeln('Updating team configuration... ');
-            
+
             $process = new Process('git fetch --all && git reset --hard origin/master', $basePath . 'team');
             $process->setTimeout(3600);
             $process->run(function ($type, $buffer) use ($output) {
                 $output->write($buffer);
             });
         }
+
+
+        $this->writeUpdateMessage($output);
+    }
+
+
+    protected function writeUpdateMessage($output) {
+
+        $composer = json_decode(file_get_contents(dirname(__FILE__) . '/../../../composer.json'));
+
+        $output->writeln("<info>Dirt updated to version" . $composer->version . ".</info>");
+
+        $output->writeln("<comment>New features:</comment>");
+        $output->writeln("1. New Command: <comment>dirt branch NAME_OF_BRANCH</comment> // creates a branch and pushes branch to repo");
+        $output->writeln("2. New Option for Dirt Deploy: <comment>dirt deploy branch</comment> // pushes code to current working branch");
+        $output->writeln("3. Added .DS_Store to .gitignore by default.");
+
     }
 
 }

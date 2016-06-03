@@ -1,6 +1,6 @@
 <?php
 namespace Dirt;
- 
+
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
@@ -9,16 +9,16 @@ use Symfony\Component\Console\Input\InputArgument;
 class DirtApplication extends Application {
 
     private static $logo =   '
-       ___      __ 
+       ___      __
   ____/ (_)____/ /_
  / __  / / ___/ __/
-/ /_/ / / /  / /_  
-\__,_/_/_/   \__/  
+/ /_/ / / /  / /_
+\__,_/_/_/   \__/
 
 ';
 
     private static $name = 'dirt [Done In Record Time]';
-    private static $version = '1.3.2';
+    private static $version = '1.3.3';
 
     public function __construct() {
 
@@ -26,7 +26,7 @@ class DirtApplication extends Application {
 
         $builder = new \DI\ContainerBuilder();
         $container = $builder->build();
- 
+
         $this->addCommands(array(
             $container->get('Dirt\Command\OpenCommand'),
             $container->get('Dirt\Command\CreateCommand'),
