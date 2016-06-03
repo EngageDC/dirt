@@ -1,2 +1,3 @@
 .vagrant*
 db/*.sql
+.DS_Store
