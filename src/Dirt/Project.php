@@ -22,6 +22,8 @@ class Project {
     private $productionUrl;
 
     private $databaseCredentials = [];
+    
+    private $seed;
 
     private $config = null;
 
@@ -71,6 +73,10 @@ class Project {
 
         if (!empty($projectData->wpengine)) {
             $project->wpengine = $projectData->wpengine;
+        }
+        
+        if (!empty($projectData->seed)) {
+            $project->seed = $projectData->seed;
         }
         
         $project->parseGitConfig(); 
@@ -548,6 +554,28 @@ class Project {
         }
 
         return $result;
+    }
+    
+    /**
+    * Checks for seed data
+    *
+    * @param: none
+    *
+    * @return bool
+    */
+    public function hasSeed() {
+        return !empty($this->seed);
+    }
+    
+    /**
+    * Returns seed data
+    *
+    * @param: none
+    *
+    * @return object
+    */
+    public function getSeed() {
+        return $this->seed;
     }
     
 }

@@ -37,6 +37,7 @@ class DirtApplication extends Application {
             $container->get('Dirt\Command\TransferDatabaseCommand'),
             $container->get('Dirt\Command\TransferUploadsCommand'),
             $container->get('Dirt\Command\BranchCommand'),
+            $container->get('Dirt\Command\SeedCommand'),
         ));
 
         $d = new \DateTime;
