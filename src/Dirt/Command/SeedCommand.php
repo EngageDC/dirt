@@ -26,13 +26,19 @@ class SeedCommand extends Command
     private $terminal;
     private $git;
     
+    private $env;
+    
     private $seed;
     private $teamSeed;
     
     private $buildRepo;
+    private $hasBuild;
     private $themeRepo;
+    private $hasTheme;
     private $pluginsRepo;
+    private $hasPlugins;
     private $composerFile;
+    private $hasComposer;
 
     public function __construct(\Dirt\Configuration $configuration) {
         parent::__construct();
@@ -60,30 +66,67 @@ class SeedCommand extends Command
         $this->terminal = new LocalTerminal(getcwd(), $this->output);
         $this->git = new GitBuilder();
         
-        if (!$this->project->hasSeed() && !$this->config->hasTeamSeed()) {
-            throw new \RuntimeException('No seed information found.');
-        } else {
-            $this->seed = $this->project->getSeed();
-            $this->teamSeed = $this->config->getTeamSeed();
-        }
-        
+                
+        $this->output->write('Detecting environment ... ');
+        $this->detectEnvironment();
         
         $this->output->write('Checking for build files ...');
-        if (!empty($this->seed->build)) {
-            $this->output->write('<info>Ok</info>' . PHP_EOL);
-            
-            $this->output->write('Attempting to clone build files...');
-            $this->getBuild();
-            
+        if (!$this->project->hasSeed() && !$this->config->hasTeamSeed()) {
+            $this->output->write('<error>None found. Exiting.' . PHP_EOL);
+            $this->output->writeln('<comment>Please put seed information can be placed in either the Dirtfile or team configuation and then re-run "dirt seed."</comment>');
         } else {
-            
-            $this->output->write('<comment> None found.</comment>' . PHP_EOL);
-            $this->output->writeln('Continuing...');
-            
+            $this->getSeed();
         }
         
-       
+        //Start the process... env dependent
+        if ($this->env === 'wordpress') {
+            $this->doWordpress();
+        } elseif ($this->env === 'laravel') {
+            $this->doLaravel();
+        }
+        
     }
+    
+    
+    /**
+    * Controller for WordPress Seeder functions
+    *
+    * @param: none;
+    *
+    * @return: mixed (output responses)
+    **/
+    protected function doWordpress() {
+        
+        if ($this->hasTheme) {
+            $this->output->write('Getting theme repo ...');
+            $this->terminal->run('rm -rf public/wp-content/themes/*');
+            $this->terminal->run('git clone ' . $this->themeRepo . ' public/wp-content/themes/' . $this->project->getName());
+            $this->output->write('<info>Ok</info>' . PHP_EOL);
+        }
+        
+        if ($this->hasPlugins) {
+            $this->output->write('Getting plugins repo ...');
+            $this->terminal->run('rm -rf public/wp-content/plugins');
+            $this->terminal->run('git clone ' . $this->pluginsRepo . ' public/wp-content/plugins');
+            $this->output->write('<info>Ok</info>' . PHP_EOL);
+        }
+        
+    }
+    
+    
+    
+    /**
+    * Controller for Laravel Seeder functions
+    *
+    * @param: none;
+    *
+    * @return: mixed (output responses)
+    **/
+    protected function doLaravel() {
+        
+        
+    }
+    
     
     
     /**
@@ -119,6 +162,107 @@ class SeedCommand extends Command
         $this->output->write('Attempting to configure build files...');
         
     }
+    
+    /**
+    * Call appropriate seed functions by environment
+    *
+    * @param: none;
+    *
+    * @return none (populating build files)
+    **/
+    protected function getSeed() {
+        $this->seed = $this->project->getSeed();
+        $this->teamSeed = $this->config->getTeamSeed();
+        
+        
+        if ($this->env === 'wordpress') {
+            $this->getWpSeed();
+        } elseif ($this->env === 'laravel ') {
+            $this->getLaravelSeed();
+        }
+        
+    }
+    
+    /**
+    * Populate WordPress seed values
+    *
+    * @param: none;
+    *
+    * @return none (populating build files)
+    **/
+    protected function getWpSeed() {
+        
+        
+        //check for build files
+        if (!empty($this->seed->build)) {
+            $this->hasBuild = true;
+            $this->buildRepo = $this->seed->build;
+        } elseif (!empty($this->teamSeed->wordpress->build)) {
+            $this->hasBuild = true;
+            $this->$buildRepo = $this->teamSeed->wordpress->build;
+        } else {
+            $this->hasBuild = false;
+            $this->output->write(PHP_EOL . "<comment>No build repo found. Continuing...</comment" . PHP_EOL);
+        }
+        
+        //check for theme files
+        if (!empty($this->seed->theme)) {
+            $this->hasTheme = true;
+            $this->themeRepo = $this->seed->theme;
+        } elseif (!empty($this->teamSeed->wordpress->theme)) {
+            $this->hasTheme = true;
+            $this->themeRepo = $this->teamSeed->wordpress->theme;
+        } else {
+            $this->hasTheme = false;
+            $this->output->write(PHP_EOL . "<comment>No theme repo found. Continuing...</comment" . PHP_EOL);
+        }
+        
+        // check for plugins files
+        if (!empty($this->seed->plugins)) {
+            $this->hasPlugins = true;
+            $this->pluginRepo = $this->seed->plugins;
+        } elseif (!empty($this->teamSeed->wordpress->plugins)) {
+            $this->hasPlugins = true;
+            $this->pluginsRepo = $this->teamSeed->wordpress->plugins;
+        } else {
+            $this->hasPlugins = false;
+            $this->output->write(PHP_EOL . "<comment>No plugins repo found. Continuing...</comment" . PHP_EOL);
+        }
+        
+        $this->output->write('<info>Build information loaded</info>' . PHP_EOL);
+    }
+    
+    
+    /**
+    * Populate Laravel seed values
+    *
+    * @param: none;
+    *
+    * @return none (populating build files)
+    **/
+    protected function getLaravelSeed() {
+        
+    }
 
+    /**
+    * Detect the operating environment of the project
+    *
+    * @param: none;
+    *
+    * @return ouput and defining $this->env
+    **/
+    protected function detectEnvironment() {
+        
+        $isWordpress = $this->terminal->run('test -f public/wp-config.php && echo "true" || echo "false"');
+        $isLaravel = $this->terminal->run('test -f artisan && echo "true" || echo "false"');
+        
+        if (strpos($isWordpress, "true") !== false) {
+            $this->output->write('<info>WordPress</info>' . PHP_EOL);
+            $this->env = 'wordpress';
+        } elseif ( strpos($isLaravel, "true") !== false ) {
+            $this->output->write('<info>Laravel</info>' . PHP_EOL);
+            $this->env = 'laravel';
+        }
+    }
     
 }
