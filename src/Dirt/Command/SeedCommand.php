@@ -28,6 +28,11 @@ class SeedCommand extends Command
     
     private $seed;
     private $teamSeed;
+    
+    private $buildRepo;
+    private $themeRepo;
+    private $pluginsRepo;
+    private $composerFile;
 
     public function __construct(\Dirt\Configuration $configuration) {
         parent::__construct();
@@ -71,7 +76,6 @@ class SeedCommand extends Command
             $this->getBuild();
             
         } else {
-            
             
             $this->output->write('<comment> None found.</comment>' . PHP_EOL);
             $this->output->writeln('Continuing...');
