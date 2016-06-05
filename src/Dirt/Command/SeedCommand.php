@@ -27,6 +27,7 @@ class SeedCommand extends Command
     private $git;
     
     private $seed;
+    private $teamSeed;
 
     public function __construct(\Dirt\Configuration $configuration) {
         parent::__construct();
@@ -45,9 +46,6 @@ class SeedCommand extends Command
         $this->input = $input;
         $this->output = $output;
         
-        var_dump($this->config);
-        die();
-        
         $dirtfileName = getcwd() . '/Dirtfile.json';
         if (!file_exists($dirtfileName)) {
             throw new \RuntimeException('Not a valid project directory, Dirtfile.json could not be found.');
@@ -57,10 +55,11 @@ class SeedCommand extends Command
         $this->terminal = new LocalTerminal(getcwd(), $this->output);
         $this->git = new GitBuilder();
         
-        if (!$this->project->hasSeed()) {
+        if (!$this->project->hasSeed() && !$this->config->hasTeamSeed()) {
             throw new \RuntimeException('No seed information found.');
         } else {
             $this->seed = $this->project->getSeed();
+            $this->teamSeed = $this->config->getTeamSeed();
         }
         
         
@@ -81,6 +80,7 @@ class SeedCommand extends Command
         
        
     }
+    
     
     /**
     * Clone build files
