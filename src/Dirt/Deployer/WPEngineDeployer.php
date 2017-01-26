@@ -36,7 +36,7 @@ class WPEngineDeployer extends Deployer
             $wp_config = [];
 
             $options = ['FTP_USER'=>'','FTP_PASSWORD'=>'','FTP_URL'=>'','FTP_PROTOCOL'=>'sftp','FTP_PORT'=>'2222','FTP_REMOTE_FOLDER'=>'wp-content','LOCAL_DIRECTORY_TO_SYNC'=>'public/wp-content'];
-            
+
             foreach ($options as $field=>$default) {
                 if ($default!='') {
                     $question = '<question>' . $field . ' (Leave empty for: ' . $default . '): </question>';
@@ -57,7 +57,7 @@ class WPEngineDeployer extends Deployer
                     },
                     false,
                     $default
-                );            
+                );
             }
 
             $this->project->setWpConfig($wp_config);
@@ -67,7 +67,6 @@ class WPEngineDeployer extends Deployer
         }
 
         $command = 'git ftp init --user ' . $wpengine->FTP_USER . ' --passwd ' . $wpengine->FTP_PASSWORD . ' ' . $wpengine->FTP_PROTOCOL .'://' . $wpengine->FTP_URL . ':' . $wpengine->FTP_PORT . '/' . $wpengine->FTP_REMOTE_FOLDER . ' --syncroot ' . $wpengine->LOCAL_DIRECTORY_TO_SYNC;
-        
 
         $this->output->writeln('<comment>GIT-FTP: Initializing and deploying (Will fail if already initialized)</comment>');
         exec($command, $exec_output, $return) ;
